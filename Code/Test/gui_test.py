@@ -1,7 +1,7 @@
 from Tkinter import *
 import tkFileDialog # Get file path 
-
-import os, sys
+#from Record import record_audio, stop_record
+import os, sys, numpy as np, pyaudio, wave
 
 # Plot in GUI
 #import matplotlib
@@ -9,10 +9,42 @@ import os, sys
 #from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 #from matplotlib.figure import Figure
 
+# GLOBALS
+global Rec_on
+Rec_on = None
+
+# Record Audio
+def record_audio( input_device ):
+	# Open input stream
+	audio_rec = pyaudio.PyAudio()
+	rec_stream = audio_rec.open(
+	format = pyaudio.paInt16,
+	channels = 1, # mono
+	rate = 44100, # 44100 Hz sample rate
+	input_device_index = input_device, # input device (mic, external, etc.)
+	input = True) # Input
+	
+	num_samps = 1024
+	rec_data = []
+	while Rec_on is True:
+		rec_samps = rec_stream.read( num_samps )
+		rec_data.append(rec_samps)
+		root.update()
+	
+	#print len(rec_data)
+	rec_stream.stop_stream()
+	rec_stream.close()
+	audio_rec.terminate()
+	
+	waveFile = wave.open("test_rec.wav", 'wb')
+	waveFile.setnchannels(1)
+	waveFile.setsampwidth(audio_rec.get_sample_size(pyaudio.paInt16))
+	waveFile.setframerate(44100)
+	waveFile.writeframes(b''.join(rec_data))
+	waveFile.close()
+
 class Application(Frame):
-	def record_text(self):
-		print "Recording..."
-		
+	
 	# Get File Path for WAV File
 	def wav_file_path(self):
 		global wave_path
@@ -26,7 +58,8 @@ class Application(Frame):
 		sr = self.sr_entry.get()
 		sr = int(float(sr))
 		os.system('python test_aubio.py %s %d' % (wave_path,sr))
-		
+	
+	# Input Select		
 	def rb_select(self):
 		rb_sel =  rbvar.get()
 		if rb_sel is 1:
@@ -37,6 +70,21 @@ class Application(Frame):
 			self.record_button["state"] = NORMAL
 			self.wpath["state"] = DISABLED
 			self.input_mb["state"] = NORMAL
+			
+	# Record
+	def record_start(self):
+		print "Recording..."
+		global Rec_on
+		Rec_on = True
+		record_audio(0)
+		
+	# Stop
+	def stop_rec_play(self):
+		global Rec_on
+		if Rec_on is True:
+			Rec_on = False
+			print "Finished Recording"
+
 
 	def createWidgets(self): # Create Widgets
 		# QUIT Button
@@ -49,12 +97,12 @@ class Application(Frame):
 		# Record Button
 		self.record_button = Button(self)
 		self.record_button["text"] = "Record",
-		self.record_button["command"] = self.record_text
+		self.record_button["command"] = self.record_start
 		self.record_button["activeforeground"] = "red"
 		self.record_button.pack({"side": "left"})
 		
 		# Stop Button
-		self.stop_button = Button(self, text="Stop")
+		self.stop_button = Button(self, text="Stop", command=self.stop_rec_play)
 		self.stop_button.pack({"side": "left"})
 		
 		# Run Button
@@ -102,12 +150,20 @@ class Application(Frame):
 		self.save_out = Button(self, text="Save Output", state=DISABLED)
 		self.save_out.pack({"side": "left"})
 		
+		# Play Button
+		self.play_rec = Button(self, text="Play Recording", state=DISABLED)
+		self.play_rec.pack({"side": "left"})
+		self.play_out = Button(self, text="Play Output", state=DISABLED)
+		self.play_out.pack({"side": "left"})
+		
 		
 		
 	def __init__(self, master=None):
 		Frame.__init__(self, master)
 		self.pack()
 		self.createWidgets()
+
+		
 
 root = Tk()
 app = Application(master=root)
