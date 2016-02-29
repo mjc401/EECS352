@@ -21,8 +21,8 @@ s = source(filename, samplerate, hop_s)
 samplerate = s.samplerate
 
 # check devices
-for i in range(pyaudio.PyAudio().get_device_count()):
-    print pyaudio.PyAudio().get_device_info_by_index(i)
+#for i in range(pyaudio.PyAudio().get_device_count()):
+ #   print pyaudio.PyAudio().get_device_info_by_index(i)
 	
 	
 tolerance = 0.8
