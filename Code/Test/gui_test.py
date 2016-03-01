@@ -3,88 +3,138 @@ import tkFileDialog # Get file path
 #from Record import record_audio, stop_record
 import os, sys, numpy as np, pyaudio, wave
 
+
 # Plot in GUI
-#import matplotlib
-#matplotlib.use("TkAgg")
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-#from matplotlib.figure import Figure
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.figure import Figure
 
-# GLOBALS
-global Rec_on
-Rec_on = None
+import librosa
 
-# Record Audio
-def record_audio( input_device ):
-	# Open input stream
-	audio_rec = pyaudio.PyAudio()
-	rec_stream = audio_rec.open(
-	format = pyaudio.paInt16,
-	channels = 1, # mono
-	rate = 44100, # 44100 Hz sample rate
-	input_device_index = input_device, # input device (mic, external, etc.)
-	input = True) # Input
 	
-	num_samps = 1024
-	rec_data = []
-	while Rec_on is True:
-		rec_samps = rec_stream.read( num_samps )
-		rec_data.append(rec_samps)
-		root.update()
-	
-	#print len(rec_data)
-	rec_stream.stop_stream()
-	rec_stream.close()
-	audio_rec.terminate()
-	
-	waveFile = wave.open("test_rec.wav", 'wb')
-	waveFile.setnchannels(1)
-	waveFile.setsampwidth(audio_rec.get_sample_size(pyaudio.paInt16))
-	waveFile.setframerate(44100)
-	waveFile.writeframes(b''.join(rec_data))
-	waveFile.close()
 
 class Application(Frame):
 	
+	# Record Audio
+	def record_audio(self, input_device):
+	
+	# Open input stream
+		audio_rec = pyaudio.PyAudio()
+		rec_stream = audio_rec.open(
+		format = pyaudio.paInt16,
+		channels = 1, # mono
+		rate = 44100, # sample rate of 44100 Hz
+		input_device_index = input_device, # input device (mic, external, etc.)
+		input = True) # Input
+	
+		num_samps = 1024
+
+		self.rec_data = []
+		self.rec_data_np = []
+		
+		self.rec_end = 0
+	
+		while self.rec_on is True: # Record
+			rec_samps = rec_stream.read(num_samps)
+			self.rec_data.append(rec_samps) # pyaudio data
+			self.rec_data_np.append(np.fromstring(rec_samps, dtype=np.int16)) # pyaudio data converted to numpy
+			root.update() # make sure GUI can still update & not get stuck in loop
+
+		self.rec_data_np = np.hstack(self.rec_data_np) # output numpy data array
+		librosa.output.write_wav('test_np.wav', self.rec_data_np, 44100, norm=False)
+		print len(self.rec_data_np)
+	# Close Stream
+		rec_stream.stop_stream()
+		rec_stream.close()
+		audio_rec.terminate()
+		
+		self.rec_end = 1
+
+		waveFile = wave.open("test_rec.wav", 'wb')
+		waveFile.setnchannels(1)
+		waveFile.setsampwidth(audio_rec.get_sample_size(pyaudio.paInt16))
+		waveFile.setframerate(44100)
+		waveFile.writeframes(b''.join(self.rec_data))
+		waveFile.close()
+		
+	
 	# Get File Path for WAV File
 	def wav_file_path(self):
-		global wave_path
-		wave_path = tkFileDialog.askopenfilename()
+		self.wave_path = tkFileDialog.askopenfilename()
 		self.wptext.delete('1.0', END)
-		self.wptext.insert(INSERT,wave_path)
+		self.wptext.insert(INSERT,self.wave_path)
+		self.play_rec["state"] = NORMAL
 		
 	# Run Aubio Demo
 	def run_pitch_track(self):
-		global sr
 		sr = self.sr_entry.get()
 		sr = int(float(sr))
-		os.system('python test_aubio.py %s %d' % (wave_path,sr))
+		os.system('python test_aubio.py %s %d' % (self.wave_path,sr))
+
+	# Run InstruSwitch
+#	def run_instruswitch(self):
+		
 	
 	# Input Select		
 	def rb_select(self):
 		rb_sel =  rbvar.get()
-		if rb_sel is 1:
+		if rb_sel is 1: # File Upload Selected
 			self.record_button["state"] = DISABLED
+			self.sr_entry["state"] = NORMAL
 			self.wpath["state"] = NORMAL
 			self.input_mb["state"] = DISABLED
-		if rb_sel is 2:
+		if rb_sel is 2: # Record Selected
 			self.record_button["state"] = NORMAL
+			self.sr_entry["state"] = DISABLED
 			self.wpath["state"] = DISABLED
 			self.input_mb["state"] = NORMAL
 			
 	# Record
 	def record_start(self):
-		print "Recording..."
-		global Rec_on
-		Rec_on = True
-		record_audio(0)
+		mb_sel =  mbvar.get()
+		if mb_sel == 1: # Mic as Input
+			self.rec_on = True
+			print "Recording..."
+			self.record_audio(0)
+		#if mb_sel == 2: # External as Input
+		#	Rec_on = True
+		#	print "Recording..."
+		#	record_audio(1)
 		
 	# Stop
 	def stop_rec_play(self):
-		global Rec_on
-		if Rec_on is True:
-			Rec_on = False
+		if self.rec_on is True:
+			self.rec_on = False
 			print "Finished Recording"
+			self.play_rec["state"] = NORMAL
+			self.save_rec["state"] = NORMAL
+			rb_sel =  rbvar.get()
+			#while self.rec_end is 0: pass
+	
+				
+		#if play_on is True:
+	
+	#def save_file(self):
+	
+	def plot_input(self):
+		fig1 = Figure(figsize=(5,5), dpi=100)
+		a1 = fig1.add_subplot(111)
+		rb_sel =  rbvar.get()
+		if rb_sel is 1:
+			1
+		if rb_sel is 2:
+			t_length = len(self.rec_data_np)
+			times = np.arange(0,t_length * 44100)/44100.
+			print len(self.rec_data_np), times.shape
+			a1.plot(times, self.rec_data_np)
+			#input_fig = FigureCanvasTkAgg(fig1, self)
+			#input_fig.show()
+			#input_fig.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
 
+			#input_fig_toolbar = NavigationToolbar2TkAgg(input_fig, self)
+			#input_fig_toolbar.update()
+			#input_fig._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
 
 	def createWidgets(self): # Create Widgets
 		# QUIT Button
@@ -144,6 +194,10 @@ class Application(Frame):
 		self.input_mb.pack({"side": "left"})
 		
 		# Save Buttons
+		self.save_label = Label(self, text="Save Path").pack({"side": "left"})
+		self.save_entry = Entry(self)
+		self.save_entry.pack({"side": "left"})
+		
 		self.save_rec = Button(self, text="Save Recorded Audio", state=DISABLED)
 		self.save_rec.pack({"side": "left"})
 		
@@ -155,6 +209,8 @@ class Application(Frame):
 		self.play_rec.pack({"side": "left"})
 		self.play_out = Button(self, text="Play Output", state=DISABLED)
 		self.play_out.pack({"side": "left"})
+		
+
 		
 		
 		
