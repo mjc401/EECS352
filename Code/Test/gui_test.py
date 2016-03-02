@@ -16,12 +16,13 @@ import librosa
 
 class Application(Frame):
 	
+# AUDIO (RECORD, PLAY, LIVE)
 	# Record Audio
 	def record_audio(self, input_device):
 	
-	# Open input stream
-		audio_rec = pyaudio.PyAudio()
-		rec_stream = audio_rec.open(
+		# Open input stream
+		self.audio_rec = pyaudio.PyAudio()
+		rec_stream = self.audio_rec.open(
 		format = pyaudio.paInt16,
 		channels = 1, # mono
 		rate = 44100, # sample rate of 44100 Hz
@@ -42,25 +43,101 @@ class Application(Frame):
 		self.rec_data_np = np.hstack(self.rec_data_np) # output numpy data array
 		#librosa.output.write_wav('test_np.wav', self.rec_data_np, 44100, norm=False)
 
-	# Close Stream
+		# Close Stream
 		rec_stream.stop_stream()
 		rec_stream.close()
-		audio_rec.terminate()
-
-		waveFile = wave.open("test_rec.wav", 'wb')
-		waveFile.setnchannels(1)
-		waveFile.setsampwidth(audio_rec.get_sample_size(pyaudio.paInt16))
-		waveFile.setframerate(44100)
-		waveFile.writeframes(b''.join(self.rec_data))
-		waveFile.close()
+		self.audio_rec.terminate()
 		
+	# Play Audio
+	def play_audio(self):
+		self.audio_sel =  self.playbvar.get()
+		if self.audio_sel is 1: # Play Original
+			if self.rb_sel is 1: # From File Upload
+				wav_play = wave.open(self.wave_path, 'rb')
+
+				p_aud = pyaudio.PyAudio()
+
+				play_stream = p_aud.open(format=p_aud.get_format_from_width(wav_play.getsampwidth()),
+				channels=wav_play.getnchannels(),
+				rate=wav_play.getframerate(),
+				output=True)
+
+				play_data = wav_play.readframes(1024)
+				self.play_on = True
+
+				while play_data != '' and self.play_on is True:
+					play_stream.write(play_data)
+					play_data = wav_play.readframes(1024)
+					root.update()
+
+				play_stream.stop_stream()
+				play_stream.close()
+	
+				p_aud.terminate()
+				
+			if self.rb_sel is 2: # From Recording
+				p_aud = pyaudio.PyAudio()
+
+				play_stream = p_aud.open(
+				format=pyaudio.paInt16,
+				channels=1,
+				rate=44100,
+				output=True)
+				
+				self.play_on = True
+				i = 1
+				play_data = self.rec_data_np[0:1023].astype(np.int16).tostring()
+
+				while play_data != '' and self.play_on is True:
+					play_stream.write(play_data)
+					start = i*1023
+					end = start + 1023
+					play_data = self.rec_data_np[start:end].astype(np.int16).tostring()
+					i += 1
+					root.update()
+
+				play_stream.stop_stream()
+				play_stream.close()
+	
+				p_aud.terminate()
+	
+	# Live Audio
+	#def live_audio(self, input_device)
+	#	p_live = pyaudio.PyAudio()
+	#	live_stream = p_live.open(
+	#	format = pyaudio.paInt16,
+	#	channels = 1, # mono
+	#	rate = 44100, # sample rate of 44100 Hz
+	#	input = True, # input
+	#	input_device_index = input_device, # probably 2 for guitar (probably feedback w/ mic)
+	#	output = True, # output
+	#	frames_per_buffer=1024)
+
+		#print("* recording")
+	#	num_samps = 1024
+
+	#	while self.live_on is True: # Record
+	#		live_samps = rec_stream.read(num_samps)
+	#		self.live_data = rec_samps # pyaudio data
+	#		self.live_data_np = np.fromstring(rec_samps, dtype=np.int16) # pyaudio data converted to numpy
+	#		live_out = self.run_instruswitch
+	#		live_stream.write(live_out, 1024)
+	#		root.update()
+
+		#print("* done")
+
+	#	live_stream.stop_stream()
+	#	live_stream.close()
+
+	#	p_live.terminate()
 	
 	# Get File Path for WAV File
 	def wav_file_path(self):
 		self.wave_path = tkFileDialog.askopenfilename()
 		self.wptext.delete('1.0', END)
 		self.wptext.insert(INSERT,self.wave_path)
-		self.play_rec["state"] = NORMAL
+		self.play_button["state"] = NORMAL
+		self.stop_audio_button["state"] = NORMAL
 		
 	# Run Aubio Demo
 	def run_pitch_track(self):
@@ -85,33 +162,57 @@ class Application(Frame):
 			self.sr_entry["state"] = DISABLED
 			self.wpath["state"] = DISABLED
 			self.input_mb["state"] = NORMAL
+		if self.rb_sel is 3: # Live Selected
+			self.record_button["state"] = NORMAL
+			self.sr_entry["state"] = DISABLED
+			self.wpath["state"] = DISABLED
+			self.input_mb["state"] = NORMAL
 			
 	# Record
 	def record_start(self):
-		self.mb_sel =  self.mbvar.get()
-		if self.mb_sel == 1: # Mic as Input
-			self.rec_on = True
-			print "Recording..."
-			self.record_audio(0)
-		#if self.mb_sel == 2: # External as Input
-		#	Rec_on = True
-		#	print "Recording..."
-		#	record_audio(1)
+		if self.rb_sel is 2:
+			self.mb_sel =  self.mbvar.get()
+			if self.mb_sel == 1: # Mic as Input
+				self.rec_on = True
+				print "Recording..."
+				self.record_audio(0)
+			if self.mb_sel == 2: # External as Input
+				self.rec_on = True
+				print "Recording..."
+				self.record_audio(2)
+		#if self.rb_sel is 3:
+		#	self.live_on = True
+		#	print "Live..."
+		#	self.live_audio(2)
 		
-	# Stop
+	# Stop (Record)
 	def stop_rec(self):
 		if self.rec_on is True:
 			self.rec_on = False
 			print "Finished Recording"
-			self.play_rec["state"] = NORMAL
-			self.save_rec["state"] = NORMAL
-		#if self.play_on is True:
-			#self.play_on = False
-	
-	#def save_file(self):
-	#	self.save_path = self.save_entry.get()
+			self.play_button["state"] = NORMAL
+			self.stop_audio_button["state"] = NORMAL
+			self.save_button["state"] = NORMAL
 
-	
+	# Stop (Play)		
+	def stop_play(self):
+		if self.play_on is True:
+			self.play_on = False
+				
+	# Save Files
+	def save_file(self):
+		self.audio_sel =  self.playbvar.get()
+		if self.audio_sel is 1: # Save Original
+			if self.rb_sel is 2: # Save Recording
+				self.save_path = self.save_entry.get()
+				waveFile = wave.open(self.save_path, 'wb')
+				waveFile.setnchannels(1)
+				waveFile.setsampwidth(self.audio_rec.get_sample_size(pyaudio.paInt16))
+				waveFile.setframerate(44100)
+				waveFile.writeframes(b''.join(self.rec_data))
+				waveFile.close()
+
+	# Plot
 	def plot_input(self):
 		fig1 = Figure(figsize=(5,5), dpi=100)
 		a1 = fig1.add_subplot(111)
@@ -130,7 +231,8 @@ class Application(Frame):
 			#input_fig_toolbar.update()
 			#input_fig._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
 
-	def createWidgets(self): # Create Widgets
+	# Create Widgets
+	def createWidgets(self): 
 		# QUIT Button
 		self.QUIT = Button(self)
 		self.QUIT["text"] = "QUIT"
@@ -208,6 +310,11 @@ class Application(Frame):
 		self.input_inst.menu.add_radiobutton(label="Trumpet", variable=self.ibvar, value=3)
 		self.input_inst.menu.add_radiobutton(label="Bass", variable=self.ibvar, value=4)
 		
+		# Transpose
+		trans_var = IntVar()
+		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=trans_var, bg="grey85")
+		self.trans_slider.grid(row=6, column=1, columnspan=2) 
+		
 	# Run, Play, & Save
 		
 		self.rps_font = tkFont.Font(family="Helvetica", size=24, weight="bold")
@@ -219,11 +326,11 @@ class Application(Frame):
 		self.run_button.grid(row=6, column=8, columnspan=3, pady=5)
 		
 		# Play Button
-		self.play_button = Button(self, text="Play", state=DISABLED)
+		self.play_button = Button(self, text="Play", state=DISABLED, command=self.play_audio)
 		self.play_button.grid(row=7, column=8, sticky=W, pady=5)
 		
 		# Stop Button (Audio)
-		self.stop_audio_button = Button(self, text="Stop", state=DISABLED)#, command=self.stop_play)
+		self.stop_audio_button = Button(self, text="Stop", state=DISABLED, command=self.stop_play)
 		self.stop_audio_button.grid(row=7, column=9, sticky=W, pady=5)
 		
 		# Original or Output Select
@@ -234,7 +341,7 @@ class Application(Frame):
 		self.play_out_rb.grid(row=7, column=17, sticky=W, ipady=5)
 		
 		# Save Buttons
-		self.save_button = Button(self, text="Save", state=DISABLED)
+		self.save_button = Button(self, text="Save", state=DISABLED, command=self.save_file)
 		self.save_button.grid(row=8, column=8, sticky=W, pady=5)
 		
 		#self.save_label = Label(self, text="Save Path")
