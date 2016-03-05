@@ -2,7 +2,7 @@ from Tkinter import *
 import tkFileDialog # Get file path 
 #from Record import record_audio, stop_record
 import os, sys, numpy as np, pyaudio, wave, tkFont
-from PIL import Image, ImageTk
+#from PIL import Image, ImageTk
 
 
 # Plot in GUI
@@ -244,9 +244,19 @@ class Application(Frame):
 		self.QUIT.grid(row=0, column=0, sticky=NW)
 	
 	# Title
+		ti = PhotoImage(file="instru_switch_switch_text_overlay.gif")
+		ti = ti.subsample(4,4)
 		self.title_font = tkFont.Font(family="Helvetica", size=36, weight="bold")
-		self.instruswitch_title = Label(self, text="InstruSwitch", font=self.title_font, bg="grey85")
+		self.instruswitch_title = Label(self, text="InstruSwitch", font=self.title_font, bg="grey85",image=ti)
+		self.instruswitch_title.image = ti
 		self.instruswitch_title.grid(row=0, columnspan=20, ipady=25)
+		ti_sw = PhotoImage(file="instru_switch_switch_text.gif")
+		ti_sw = ti_sw.subsample(4,4)
+		self.instruswitch_title_sw = Label(self, bg="grey85",image=ti_sw)
+		self.instruswitch_title_sw.image = ti_sw
+		self.instruswitch_title_sw.grid(row=0, column=15, columnspan=4, ipady=25)
+
+
 	
 	# Inputs
 		self.input_font = tkFont.Font(family="Helvetica", size=24, weight="bold")
