@@ -54,10 +54,13 @@ class Application(Frame):
 	# Play Audio
 	def play_audio(self):
 		self.audio_sel =  self.playbvar.get()
+		self.play_img_g = PhotoImage(file="play_green.gif")
 		if self.audio_sel is 1: # Play Original
 			if self.rb_sel is 1: # From File Upload
 				wav_play = wave.open(self.wave_path, 'rb')
 
+				self.play_button["image"] = self.play_img_g
+				
 				p_aud = pyaudio.PyAudio()
 
 				play_stream = p_aud.open(format=p_aud.get_format_from_width(wav_play.getsampwidth()),
@@ -78,8 +81,12 @@ class Application(Frame):
 	
 				p_aud.terminate()
 				
+				self.play_button["image"] = self.play_img
+				
 			if self.rb_sel is 2: # From Recording
 				p_aud = pyaudio.PyAudio()
+				
+				self.play_button["image"] = self.play_img_g
 
 				play_stream = p_aud.open(
 				format=pyaudio.paInt16,
@@ -103,6 +110,8 @@ class Application(Frame):
 				play_stream.close()
 	
 				p_aud.terminate()
+				
+				self.play_button["image"] = self.play_img
 	
 	# Live Audio
 	#def live_audio(self, input_device)
@@ -178,6 +187,8 @@ class Application(Frame):
 			if self.mb_sel == 1: # Mic as Input
 				self.rec_on = True
 				print "Recording..."
+				self.rec_red = PhotoImage(file="record_red.gif")
+				self.record_button["image"] = self.rec_red
 				self.record_audio(0)
 			if self.mb_sel == 2: # External as Input
 				self.rec_on = True
@@ -193,6 +204,7 @@ class Application(Frame):
 		if self.rec_on is True:
 			self.rec_on = False
 			print "Finished Recording"
+			self.record_button["image"] = self.rec_black
 			self.play_button["state"] = NORMAL
 			self.stop_audio_button["state"] = NORMAL
 			self.save_button["state"] = NORMAL
@@ -200,6 +212,7 @@ class Application(Frame):
 	# Stop (Play)		
 	def stop_play(self):
 		if self.play_on is True:
+			self.play_button["image"] = self.play_img
 			self.play_on = False
 				
 	# Save Files
@@ -244,52 +257,52 @@ class Application(Frame):
 		self.QUIT.grid(row=0, column=0, sticky=NW)
 	
 	# Title
-		ti = PhotoImage(file="instru_switch_switch_text_overlay.gif")
+		ti = PhotoImage(file="instruswitch.gif")
 		ti = ti.subsample(4,4)
 		self.title_font = tkFont.Font(family="Helvetica", size=36, weight="bold")
 		self.instruswitch_title = Label(self, text="InstruSwitch", font=self.title_font, bg="grey85",image=ti)
 		self.instruswitch_title.image = ti
-		self.instruswitch_title.grid(row=0, columnspan=20, ipady=25)
-		ti_sw = PhotoImage(file="instru_switch_switch_text.gif")
-		ti_sw = ti_sw.subsample(4,4)
+		self.instruswitch_title.grid(row=0, columnspan=20, rowspan=2, sticky=N)
+		ti_sw = PhotoImage(file="instru_switch_switch.gif")
+		ti_sw = ti_sw.subsample(8,8)
 		self.instruswitch_title_sw = Label(self, bg="grey85",image=ti_sw)
 		self.instruswitch_title_sw.image = ti_sw
-		self.instruswitch_title_sw.grid(row=0, column=15, columnspan=4, ipady=25)
+		self.instruswitch_title_sw.grid(row=0, column=20, columnspan=4, rowspan=2, sticky=N)
 
 
 	
 	# Inputs
 		self.input_font = tkFont.Font(family="Helvetica", size=24, weight="bold")
 		self.input_label = Label(self, text="Select Inputs:                     ", bg= "cornflower blue", font=self.input_font)
-		self.input_label.grid(row=1, columnspan=10, ipady=10, sticky=W, pady=5)
+		self.input_label.grid(row=2, columnspan=10, ipady=10, sticky=W, pady=5)
 		
 		# Upload, Record, Live
 		self.rbvar = IntVar()
 		self.file_rb = Radiobutton(self, text="File Upload", variable=self.rbvar, value=1, command=self.rb_select, bg="grey85")
-		self.file_rb.grid(row=2, column=0, sticky=W, ipady=5)
+		self.file_rb.grid(row=3, column=0, sticky=W, ipady=5)
 		self.record_rb = Radiobutton(self, text="Record", variable=self.rbvar, value=2, command=self.rb_select, bg="grey85")
-		self.record_rb.grid(row=3, column=0, sticky=W, ipady=5)
+		self.record_rb.grid(row=4, column=0, sticky=W, ipady=5)
 		self.live_rb = Radiobutton(self, text="Live", variable=self.rbvar, value=3, state=DISABLED, bg="grey85")
-		self.live_rb.grid(row=4, column=0, sticky=W, ipady=5)
+		self.live_rb.grid(row=5, column=0, sticky=W, ipady=5)
 		
 		# WAV File Load Button
 		self.wpath = Button(self, text="Load WAV File",command=self.wav_file_path)
-		self.wpath.grid(row=2, column=1)
+		self.wpath.grid(row=3, column=1)
 		self.wptext = Text(self, height=1, width=40)
 		self.wptext.insert(INSERT, "WAV Path")
-		self.wptext.grid(row=2, column=2, columnspan=5)
+		self.wptext.grid(row=3, column=2, columnspan=5)
 	
 		# Sample Rate Entry
 		self.sr_label = Label(self, text="Sample Rate (Hz)", bg="grey85")
-		self.sr_label.grid(row=2, column=8, columnspan=5, ipadx=5)
+		self.sr_label.grid(row=3, column=8, columnspan=5, ipadx=5)
 		self.sr_entry = Entry(self)
 		self.sr_entry.insert(0, 44100)
-		self.sr_entry.grid(row=2, column=14, columnspan=5)
+		self.sr_entry.grid(row=3, column=14, columnspan=5)
 		
 		# Mic, External, Etc.		
 		self.mbvar = IntVar()
 		self.input_mb = Menubutton(self, text="Select Input")
-		self.input_mb.grid(row=3, column=1)
+		self.input_mb.grid(row=4, column=1)
 		self.input_mb.menu = Menu(self.input_mb, tearoff=0)
 		self.input_mb["menu"]  =  self.input_mb.menu
 		self.input_mb.menu.add_radiobutton(label="Mic", variable=self.mbvar, value=1)
@@ -298,24 +311,30 @@ class Application(Frame):
 		
 		# Record Button
 		self.record_button = Button(self)
-		self.record_button["text"] = "Record",
+		self.rec_black = PhotoImage(file="record_black.gif")
+		#self.record_button["text"] = "Record"
+		self.rec_black = self.rec_black.subsample(1,1)
 		self.record_button["command"] = self.record_start
 		self.record_button["activeforeground"] = "red"
-		self.record_button.grid(row=3, column=2)
+		self.record_button["image"] = self.rec_black
+		self.record_button.image = self.rec_black
+		self.record_button.grid(row=4, column=2)
 		
 		# Stop Button (Record)
-		self.stop_button = Button(self, text="Stop", command=self.stop_rec)
-		self.stop_button.grid(row=3, column=3, sticky=W)
+		self.stop_button = Button(self, command=self.stop_rec)
+		self.stop_img = PhotoImage(file="Stop.gif")
+		self.stop_button["image"] = self.stop_img
+		self.stop_button.grid(row=4, column=3, sticky=W)
 		
 	# Select Instrument Configuration
 		self.instr_font = tkFont.Font(family="Helvetica", size=24, weight="bold")
 		self.instr_label = Label(self, text="Select Output Instrument:", bg= "cornflower blue", font=self.instr_font)
-		self.instr_label.grid(row=5, columnspan=8, ipady=10, sticky=W, pady=5)
+		self.instr_label.grid(row=6, columnspan=8, ipady=10, sticky=W, pady=5)
 		
 		# Instrument Menu
 		self.ibvar = IntVar()
 		self.input_inst = Menubutton(self, text="Select Instrument")
-		self.input_inst.grid(row=6, column=0, sticky=W)
+		self.input_inst.grid(row=7, column=0, sticky=W)
 		self.input_inst.menu = Menu(self.input_inst, tearoff=0)
 		self.input_inst["menu"]  =  self.input_inst.menu
 		self.input_inst.menu.add_radiobutton(label="Piano", variable=self.ibvar, value=1)
@@ -326,42 +345,45 @@ class Application(Frame):
 		# Transpose
 		trans_var = IntVar()
 		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=trans_var, bg="grey85")
-		self.trans_slider.grid(row=6, column=1, columnspan=2) 
+		self.trans_slider.grid(row=7, column=1, columnspan=2) 
 		
 	# Run, Play, & Save
 		
 		self.rps_font = tkFont.Font(family="Helvetica", size=24, weight="bold")
 		self.rps_label = Label(self, text="Run, Play, & Save:", bg= "cornflower blue", font=self.rps_font, anchor=W)
-		self.rps_label.grid(row=5, column=8, columnspan=18, ipady=10, sticky=W+E, pady=5)
+		self.rps_label.grid(row=6, column=8, columnspan=18, ipady=10, sticky=W+E, pady=5)
 		
 		# Run Button
 		self.run_button = Button(self, text="Run InstruSwitch", command=self.run_pitch_track)
-		self.run_button.grid(row=6, column=8, columnspan=3, pady=5)
+		self.run_button.grid(row=7, column=8, columnspan=3, pady=5)
 		
 		# Play Button
-		self.play_button = Button(self, text="Play", state=DISABLED, command=self.play_audio)
-		self.play_button.grid(row=7, column=8, sticky=W, pady=5)
+		self.play_button = Button(self, state=DISABLED, command=self.play_audio)
+		self.play_img = PhotoImage(file="play_black.gif")
+		self.play_button["image"] = self.play_img
+		self.play_button.grid(row=8, column=8, sticky=W, pady=5)
 		
 		# Stop Button (Audio)
-		self.stop_audio_button = Button(self, text="Stop", state=DISABLED, command=self.stop_play)
-		self.stop_audio_button.grid(row=7, column=9, sticky=W, pady=5)
+		self.stop_audio_button = Button(self, state=DISABLED, command=self.stop_play)
+		self.stop_audio_button["image"] = self.stop_img
+		self.stop_audio_button.grid(row=8, column=9, sticky=W, pady=5)
 		
 		# Original or Output Select
 		self.playbvar = IntVar()
 		self.play_orig_rb = Radiobutton(self, text="Original", variable=self.playbvar, value=1, bg="grey85")
-		self.play_orig_rb.grid(row=7, column=15, sticky=W, ipady=5)
+		self.play_orig_rb.grid(row=8, column=15, sticky=W, ipady=5)
 		self.play_out_rb = Radiobutton(self, text="Output", variable=self.playbvar, value=2, bg="grey85")
-		self.play_out_rb.grid(row=7, column=17, sticky=W, ipady=5)
+		self.play_out_rb.grid(row=8, column=17, sticky=W, ipady=5)
 		
 		# Save Buttons
 		self.save_button = Button(self, text="Save", state=DISABLED, command=self.save_file)
-		self.save_button.grid(row=8, column=8, sticky=W, pady=5)
+		self.save_button.grid(row=9, column=8, sticky=W, pady=5)
 		
 		#self.save_label = Label(self, text="Save Path")
 		#self.save_label.grid(row=8, column=9, columnspan=3)
 		self.save_entry = Entry(self, width=30)
 		self.save_entry.insert(INSERT, "Save Path")
-		self.save_entry.grid(row=8, column=10, columnspan=15, sticky=W, pady=5)
+		self.save_entry.grid(row=9, column=10, columnspan=15, sticky=W, pady=5)
 	
 		
 		
@@ -389,5 +411,15 @@ class Application(Frame):
 root = Tk()
 app = Application(master=root)
 app.configure(bg="grey85")
+root.update_idletasks()
+w = root.winfo_screenwidth()
+h = root.winfo_screenheight()
+size = tuple(int(_) for _ in root.geometry().split('+')[0].split('x'))
+x = w/2 - size[0]/2
+y = h/2 - size[1]/2
+root.geometry("%dx%d+%d+%d" % (size + (x, y)))
+root.lift()
+root.attributes("-topmost", True)
+root.attributes("-topmost", False)
 app.mainloop()
 root.destroy()
