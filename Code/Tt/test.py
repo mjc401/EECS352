@@ -1,6 +1,6 @@
 import numpy as np, scipy as sp, matplotlib.pyplot as plt, matplotlib, sklearn, pyaudio, librosa
 
-trumpet,_ = librosa.load("pitch_test_trumpet.wav",sr=44100)
+trumpet,_ = librosa.load("clarinet_test.wav",sr=44100)
 rms =  librosa.feature.rmse(y=trumpet)
 strength = librosa.onset.onset_strength_multi(y=trumpet, sr=44100)
 
