@@ -54,7 +54,7 @@ class Application(Frame):
 	# Play Audio
 	def play_audio(self):
 		self.audio_sel =  self.playbvar.get()
-		self.play_img_g = PhotoImage(file="play_green.gif")
+		self.play_img_g = PhotoImage(file="./GUI_images/play_green.gif")
 		if self.audio_sel is 1: # Play Original
 			if self.rb_sel is 1: # From File Upload
 				wav_play = wave.open(self.wave_path, 'rb')
@@ -187,7 +187,7 @@ class Application(Frame):
 			if self.mb_sel == 1: # Mic as Input
 				self.rec_on = True
 				print "Recording..."
-				self.rec_red = PhotoImage(file="record_red.gif")
+				self.rec_red = PhotoImage(file="./GUI_images/record_red.gif")
 				self.record_button["image"] = self.rec_red
 				self.record_audio(0)
 			if self.mb_sel == 2: # External as Input
@@ -257,13 +257,13 @@ class Application(Frame):
 		self.QUIT.grid(row=0, column=0, sticky=NW)
 	
 	# Title
-		ti = PhotoImage(file="instruswitch.gif")
+		ti = PhotoImage(file="./GUI_images/instruswitch.gif")
 		ti = ti.subsample(4,4)
 		self.title_font = tkFont.Font(family="Helvetica", size=36, weight="bold")
 		self.instruswitch_title = Label(self, text="InstruSwitch", font=self.title_font, bg="grey85",image=ti)
 		self.instruswitch_title.image = ti
 		self.instruswitch_title.grid(row=0, columnspan=20, rowspan=2, sticky=N)
-		ti_sw = PhotoImage(file="instru_switch_switch.gif")
+		ti_sw = PhotoImage(file="./GUI_images/instru_switch_switch.gif")
 		ti_sw = ti_sw.subsample(8,8)
 		self.instruswitch_title_sw = Label(self, bg="grey85",image=ti_sw)
 		self.instruswitch_title_sw.image = ti_sw
@@ -311,7 +311,7 @@ class Application(Frame):
 		
 		# Record Button
 		self.record_button = Button(self)
-		self.rec_black = PhotoImage(file="record_black.gif")
+		self.rec_black = PhotoImage(file="./GUI_images/record_black.gif")
 		#self.record_button["text"] = "Record"
 		self.rec_black = self.rec_black.subsample(1,1)
 		self.record_button["command"] = self.record_start
@@ -322,7 +322,7 @@ class Application(Frame):
 		
 		# Stop Button (Record)
 		self.stop_button = Button(self, command=self.stop_rec)
-		self.stop_img = PhotoImage(file="Stop.gif")
+		self.stop_img = PhotoImage(file="./GUI_images/Stop.gif")
 		self.stop_button["image"] = self.stop_img
 		self.stop_button.grid(row=4, column=3, sticky=W)
 		
@@ -359,7 +359,7 @@ class Application(Frame):
 		
 		# Play Button
 		self.play_button = Button(self, state=DISABLED, command=self.play_audio)
-		self.play_img = PhotoImage(file="play_black.gif")
+		self.play_img = PhotoImage(file="./GUI_images/play_black.gif")
 		self.play_button["image"] = self.play_img
 		self.play_button.grid(row=8, column=8, sticky=W, pady=5)
 		
@@ -421,5 +421,6 @@ root.geometry("%dx%d+%d+%d" % (size + (x, y)))
 root.lift()
 root.attributes("-topmost", True)
 root.attributes("-topmost", False)
+root.wm_title("InstruSwitch v1.0")
 app.mainloop()
 root.destroy()

@@ -30,7 +30,7 @@ class Application(Frame):
 		# Create Widgets
 	def createWidgets(self): 
 		# QUIT Button
-		ti_sw = PhotoImage(file="instru_switch_switch.gif")
+		ti_sw = PhotoImage(file="./GUI_images/instru_switch_switch.gif")
 		ti_sw = ti_sw.subsample(6,6)
 		self.instru_open = Button(self)
 		self.instru_open["image"] = ti_sw
