@@ -103,6 +103,7 @@ with MidiFile() as outfile:
 
 	outfile.save('test.mid') # output MIDI file
 
+
 # Plot
 plt.figure()
 plt.subplot(3, 1, 1)
