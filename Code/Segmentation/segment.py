@@ -14,7 +14,7 @@ def midi_velocity(signal, reference):
 	return int(midi_vel)
 
 # rms amplitude function
-def rms_db(signal, reference):
+def rms_db(signal):
 	x_sum = 0
 	x_ref_sum = 0
 	for i in signal:
@@ -56,16 +56,31 @@ for ii in xrange(0,len(onsets)):
 onsets_clean = onsets_clean[onsets_clean != 0.5]
 
 # MIDI velocity
-midi_vel_ref = rms_db(trumpet,1)
+
+# Get peak rms value for file to set as reference for velocity = 100
+midi_vel_ref = []
+sig_len = int(len(trumpet)/1024.)
+for si in xrange(0,sig_len - 1):
+	start = si * 1024
+	stop = start + 1024
+	midi_vel_ref = np.append(midi_vel_ref,rms_db(trumpet[start:stop]))
+	
+midi_vel_ref = np.amax(midi_vel_ref)
+
 print midi_vel_ref
+print rms_db(trumpet[0:512*130])
+print rms_db(trumpet[512*130:512*155])
+print rms_db(trumpet[512*155:512*175])
 print midi_velocity(trumpet[0:512*130],midi_vel_ref)
 print midi_velocity(trumpet[512*130:512*155],midi_vel_ref)
+print midi_velocity(trumpet[512*155:512*175],midi_vel_ref)
 
 # Test Data
 test_data1 = [60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)]
 test_data2 = [69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)]
+test_data3 = [60,155,175,midi_velocity(trumpet[512*155:512*175],midi_vel_ref)]
 
-test_data = np.array([[60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)],[69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)]])
+test_data = np.array([[60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)],[69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)],[60,155,175,midi_velocity(trumpet[512*155:512*175],midi_vel_ref)]])
 
 # Mido time works as tick differences so get amount between each event (1000 ticks per bar at 120 bpm, 512 samps per frame, & sample rate of 44100 Hz)
 test_duration = (np.diff(np.sort(np.concatenate((test_data[:,1],test_data[:,2])))) * 512./44100*1000).astype(int)
@@ -83,6 +98,8 @@ with MidiFile() as outfile:
 	track.append(Message('note_off', note=test_data1[0], velocity=test_data1[3], time=test_duration[0]))
 	track.append(Message('note_on', note=test_data2[0], velocity=test_data2[3], time=test_duration[1]))
 	track.append(Message('note_off', note=test_data2[0], velocity=test_data2[3], time=test_duration[2]))
+	track.append(Message('note_on', note=test_data3[0], velocity=test_data3[3], time=test_duration[3]))
+	track.append(Message('note_off', note=test_data3[0], velocity=test_data3[3], time=test_duration[4]))
 
 	outfile.save('test.mid') # output MIDI file
 
