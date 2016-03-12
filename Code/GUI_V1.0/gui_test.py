@@ -153,8 +153,8 @@ class Application(Frame):
 		
 	# Run Aubio Demo
 	def run_pitch_track(self):
-		self.sr = self.sr_entry.get()
-		self.sr = int(float(self.sr))
+		self.wav_run = wave.open(self.wave_path, 'rb')
+		self.sr = self.wav_run.getframerate()
 		os.system('python test_aubio.py %s %d' % (self.wave_path,self.sr))
 
 	# Run InstruSwitch
@@ -166,17 +166,17 @@ class Application(Frame):
 		self.rb_sel =  self.rbvar.get()
 		if self.rb_sel is 1: # File Upload Selected
 			self.record_button["state"] = DISABLED
-			self.sr_entry["state"] = NORMAL
+			#self.sr_entry["state"] = NORMAL
 			self.wpath["state"] = NORMAL
 			self.input_mb["state"] = DISABLED
 		if self.rb_sel is 2: # Record Selected
 			self.record_button["state"] = NORMAL
-			self.sr_entry["state"] = DISABLED
+			#self.sr_entry["state"] = DISABLED
 			self.wpath["state"] = DISABLED
 			self.input_mb["state"] = NORMAL
 		if self.rb_sel is 3: # Live Selected
 			self.record_button["state"] = NORMAL
-			self.sr_entry["state"] = DISABLED
+			#self.sr_entry["state"] = DISABLED
 			self.wpath["state"] = DISABLED
 			self.input_mb["state"] = NORMAL
 			
@@ -228,24 +228,6 @@ class Application(Frame):
 				waveFile.writeframes(b''.join(self.rec_data))
 				waveFile.close()
 
-	# Plot
-	def plot_input(self):
-		fig1 = Figure(figsize=(5,5), dpi=100)
-		a1 = fig1.add_subplot(111)
-		if self.rb_sel is 1:
-			1
-		if self.rb_sel is 2:
-			t_length = len(self.rec_data_np)
-			times = np.arange(0,t_length * 44100)/44100.
-			print len(self.rec_data_np), times.shape
-			a1.plot(times, self.rec_data_np)
-			#input_fig = FigureCanvasTkAgg(fig1, self)
-			#input_fig.show()
-			#input_fig.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
-
-			#input_fig_toolbar = NavigationToolbar2TkAgg(input_fig, self)
-			#input_fig_toolbar.update()
-			#input_fig._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
 
 	# Create Widgets
 	def createWidgets(self): 
@@ -293,11 +275,11 @@ class Application(Frame):
 		self.wptext.grid(row=3, column=2, columnspan=5)
 	
 		# Sample Rate Entry
-		self.sr_label = Label(self, text="Sample Rate (Hz)", bg="grey85")
-		self.sr_label.grid(row=3, column=8, columnspan=5, ipadx=5)
-		self.sr_entry = Entry(self)
-		self.sr_entry.insert(0, 44100)
-		self.sr_entry.grid(row=3, column=14, columnspan=5)
+		#self.sr_label = Label(self, text="Sample Rate (Hz)", bg="grey85")
+		#self.sr_label.grid(row=3, column=8, columnspan=5, ipadx=5)
+		#self.sr_entry = Entry(self)
+		#self.sr_entry.insert(0, 44100)
+		#self.sr_entry.grid(row=3, column=14, columnspan=5)
 		
 		# Mic, External, Etc.		
 		self.mbvar = IntVar()
@@ -339,13 +321,15 @@ class Application(Frame):
 		self.input_inst["menu"]  =  self.input_inst.menu
 		self.input_inst.menu.add_radiobutton(label="Piano", variable=self.ibvar, value=1)
 		self.input_inst.menu.add_radiobutton(label="Violin", variable=self.ibvar, value=2)
-		self.input_inst.menu.add_radiobutton(label="Trumpet", variable=self.ibvar, value=3)
+		self.input_inst.menu.add_radiobutton(label="Saxophone", variable=self.ibvar, value=3)
 		self.input_inst.menu.add_radiobutton(label="Bass", variable=self.ibvar, value=4)
 		
 		# Transpose
 		trans_var = IntVar()
 		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=trans_var, bg="grey85")
 		self.trans_slider.grid(row=7, column=1, columnspan=2) 
+		self.tr_label = Label(self, text="Semitones", bg="grey85")
+		self.tr_label.grid(row=8, column=1, columnspan=2)
 		
 	# Run, Play, & Save
 		
@@ -385,14 +369,34 @@ class Application(Frame):
 		self.save_entry.insert(INSERT, "Save Path")
 		self.save_entry.grid(row=9, column=10, columnspan=15, sticky=W, pady=5)
 	
+		# Store Play
+		'''self.store1_label = Label(self, text="Store 1", bg="grey85")
+		self.store1_label.grid(row=10, column=8)	
 		
+		self.store2_label = Label(self, text="Store 2", bg="grey85")
+		self.store2_label.grid(row=11, column=8)		
 		
-		# Save/Play Selection
-		#self.play_var = IntVar()
-		#self.play_orig = Radiobutton(self, text="Play Original", variable=self.play_var, value=1, command=self.play_select)
-		#self.play_orig.pack(anchor = NW)
-		#self.play_out = Radiobutton(self, text="Play Output", variable=self.play_var, value=2, command=self.play_select)
-		#self.play_out.pack(anchor = NW)
+		self.store1_button = Button(self, text="Store", state=DISABLED, )#command=self.store1)
+		self.store1_button.grid(row=10, column=9, sticky=W, pady=5)
+		
+		self.store2_button = Button(self, text="Store", state=DISABLED, )#command=self.store2)
+		self.store2_button.grid(row=11, column=9, sticky=W, pady=5)
+		
+		self.play_store1_button = Button(self, state=DISABLED)
+		self.play_store1_button["image"] = self.play_img
+		self.play_store1_button.grid(row=10, column=11, pady=5)
+		
+		self.stop_store1_button = Button(self, state=DISABLED)
+		self.stop_store1_button["image"] = self.stop_img
+		self.stop_store1_button.grid(row=10, column=12, pady=5)
+		
+		self.play_store2_button = Button(self, state=DISABLED)
+		self.play_store2_button["image"] = self.play_img
+		self.play_store2_button.grid(row=11, column=11, pady=5)
+		
+		self.stop_store2_button = Button(self, state=DISABLED)
+		self.stop_store2_button["image"] = self.stop_img
+		self.stop_store2_button.grid(row=11, column=12, pady=5)'''
 		
 	# Plots, etc.
 

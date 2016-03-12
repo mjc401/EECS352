@@ -1,25 +1,5 @@
 import numpy as np, scipy as sp, matplotlib.pyplot as plt, matplotlib, sklearn, pyaudio, librosa
-import math
-from mido import Message, MidiFile, MidiTrack
-
-
-def midi_velocity(signal, reference):
-	x_sum = 0
-	x_ref_sum = 0
-	for i in signal:
-		x_sum += i ** 2
-	x_rms = math.sqrt(x_sum / len(signal))
-	x_rms_dB = 20 * math.log10(x_rms / reference)
-	midi_vel = round(127 * (10 ** (x_rms_dB / 40.)))
-	return int(midi_vel)
-
-def rms_db(signal, reference):
-	x_sum = 0
-	x_ref_sum = 0
-	for i in signal:
-		x_sum += i ** 2
-	x_rms = math.sqrt(x_sum / len(signal))
-	return x_rms
+import mido
 
 # load file and rms
 trumpet,_ = librosa.load("clarinet_test.wav",sr=44100)
@@ -31,6 +11,15 @@ onsets = np.zeros(200)
 onsets_pos = np.zeros(200)
 j=0
 k=0
+
+# Squared rms (not used currently)
+rms2 = rms[0] ** 2
+rms2_diff = np.diff(rms2)
+#print rms_diff[0:30]
+#for i in xrange(0,rms.shape[1]-4):
+#	if (rms2[i+3] - rms2[i] >= 1.25 and np.all(rms2_diff[i:i+3]>0) and np.all(rms2_diff[i:i+3]>1.25)) or rms2[i+1] - rms2[i] > .75:
+#		s[j] = i
+#		j += 1
 
 # RMS test
 ## Two criterion: one stricter (greater possibility of onset) and one less (possibility but should be checked with pitch data)
@@ -44,6 +33,12 @@ for i in xrange(0,rms.shape[1]-4):
 			onsets_pos[k] = i
 			k+= 1
 
+#for i in xrange(0,rms.shape[1]-4):
+#	if rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25):
+#		s[j] = i
+#		j += 1
+
+
 # Clean onsets so no consecutive
 onsets_clean = onsets.copy()
 
@@ -54,30 +49,7 @@ for ii in xrange(0,len(onsets)):
 			
 onsets_clean = onsets_clean[onsets_clean != 0.5]
 
-midi_vel_ref = rms_db(trumpet,1)
-print midi_vel_ref
-print midi_velocity(trumpet[0:512*130],midi_vel_ref)
-print midi_velocity(trumpet[512*130:512*155],midi_vel_ref)
 
-test_data1 = [60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)]
-test_data2 = [69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)]
-
-test_data = np.array([[60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)],[69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)]])
-
-test_duration = (np.diff(np.sort(np.concatenate((test_data[:,1],test_data[:,2])))) * 512./44100*1000).astype(int)
-#print test_duration
-
-with MidiFile() as outfile:
-	track = MidiTrack()
-	outfile.tracks.append(track)
-
-	track.append(Message('program_change', program=12))
-	track.append(Message('note_on', note=test_data1[0], velocity=test_data1[3], time=int(test_data1[1]*512./44100*1000)))
-	track.append(Message('note_off', note=test_data1[0], velocity=test_data1[3], time=test_duration[0]))
-	track.append(Message('note_on', note=test_data2[0], velocity=test_data2[3], time=test_duration[1]))
-	track.append(Message('note_off', note=test_data2[0], velocity=test_data2[3], time=test_duration[2]))
-
-	outfile.save('test.mid')
 
 # Plot
 plt.figure()
