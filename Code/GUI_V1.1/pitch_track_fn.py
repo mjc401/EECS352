@@ -3,108 +3,204 @@
 import sys
 import pyaudio
 import librosa
-from aubio import source, pitch, freqtomidi
-
-if len(sys.argv) < 2:
-    print "Usage: %s <filename> [samplerate]" % sys.argv[0]
-    sys.exit(1)
-
-filename = sys.argv[1]
-
-downsample = 1
-samplerate = 44100 / downsample
-if len( sys.argv ) > 2: samplerate = int(sys.argv[2])
-
-win_s = 4096 / downsample # fft size
-hop_s = 512  / downsample # hop size
-
-s = source(filename, samplerate, hop_s)
-samplerate = s.samplerate
-
-
-
-#########VARY this Value
-tolerance = 0.80
-silence_threshold = 0.003
-
-# may be able to use onset tracking for silence threshold information
-
-pitch_o = pitch("yinfft", win_s, hop_s, samplerate)
-pitch_o.set_unit("midi")
-pitch_o.set_tolerance(tolerance)
-
-pitches = []
-confidences = []
-
-#****************************************************
-# total number of frames read
-total_frames = 0
-while True:
-    samples, read = s()
-    pitch = pitch_o(samples)[0]
-    #pitch = int(round(pitch))
-    confidence = pitch_o.get_confidence()
-    #if confidence < 0.8: pitch = 0.
-    #print "%f %f %f" % (total_frames / float(samplerate), pitch, confidence)
-    pitches += [pitch]
-    confidences += [confidence]
-    total_frames += read
-    if read < hop_s: break
-
-if 0: sys.exit(0)
+#from aubio import source, pitch, freqtomidi
+import sys, os.path
 import numpy as np
-from math import floor
+from math import floor, log10, sqrt
 from numpy import array, ma
 import matplotlib.pyplot as plt
 from demo_waveform_plot import get_waveform_plot, set_xlabels_sample2time
 
-####use librosa to get sample###
-signal, sr  = librosa.load(filename, sr = 44100)
 
-signal2 = []
-start = 0
-for i in range(512, len(signal), hop_s):
-    end = i
-    signal2.append(np.average(np.square(signal[start:end])))
-    start = i
+def pitch_track(filename, samplerate, Display=False):
+    Display_Plot = Display
 
-# print len(signal2)
-# x = np.linspace(1,len(signal2), len(signal2))
-# plt.figure
-# plt.plot(x, signal2)
-# plt.title('Hi')
+    from aubio import source, pitch, freqtomidi
 
-uplist = []
-dlist = []
-for i in range( len(signal2)-2):
-    if signal2[i+2] - signal2[i] > 0.1*signal2[i]:
-        uplist.append(i)
-    dlist.append(signal2[i+2]-signal2[i])
+    #########VARY this Value
+    tolerance = 0.80
+    silence_threshold = 0.003
+    #####################
+    # if len(sys.argv) < 2:
+    #     print "Usage: %s <filename> [samplerate]" % sys.argv[0]
+    #     sys.exit(1)
 
-#print uplist
+    #filename = sys.argv[1]
 
-#   plt.figure()
-#plt.plot(dlist)
+    downsample = 1
+    samplerate = 44100 / downsample
+    if len( sys.argv ) > 2: samplerate = int(sys.argv[2])
 
-skip = 1
+    win_s = 4096 / downsample # fft size
+    hop_s = 512  / downsample # hop size
 
-pitches = array(pitches[skip:])
-confidences = array(confidences[skip:])
-times = [t * hop_s for t in range(len(pitches))]
+    s = source(filename, samplerate, hop_s)
+    samplerate = s.samplerate
 
-#print len(pitches)
-#print pitches[2200:2300]
+    # may be able to use onset tracking for silence threshold information
 
-####create output figure####
-fig = plt.figure()
-ax1 = fig.add_subplot(311)
-ax1 = get_waveform_plot(filename, samplerate = samplerate, block_size = hop_s, ax = ax1)
-plt.setp(ax1.get_xticklabels(), visible = False)
-ax1.set_xlabel('')
+    pitch_o = pitch("yinfft", win_s, hop_s, samplerate)
+    pitch_o.set_unit("midi")
+    pitch_o.set_tolerance(tolerance)
 
-#print len(pitches)
+    pitches = []
+    confidences = []
 
-#**********************************************8
+    #****************************************************
+    # total number of frames read
+    total_frames = 0
+    while True:
+        samples, read = s()
+        pitch = pitch_o(samples)[0]
+        #pitch = int(round(pitch))
+        confidence = pitch_o.get_confidence()
+        #if confidence < 0.8: pitch = 0.
+        #print "%f %f %f" % (total_frames / float(samplerate), pitch, confidence)
+        pitches += [pitch]
+        confidences += [confidence]
+        total_frames += read
+        if read < hop_s: break
+
+    if 0: sys.exit(0)
+
+    ####use librosa to get samples###
+    signal, sr  = librosa.load(filename, sr = 44100)
+
+    signal2 = []
+    start = 0
+    for i in range(512, len(signal), hop_s):
+        end = i
+        signal2.append(np.average(np.square(signal[start:end])))
+        start = i
+
+    uplist = []
+    dlist = []
+    for i in range( len(signal2)-2):
+        if signal2[i+2] - signal2[i] > 0.1*signal2[i]:
+            uplist.append(i)
+        dlist.append(signal2[i+2]-signal2[i])
+
+    ##GET PITCHES CONFIDENCES AND TIMES##
+    skip = 1
+    pitches = array(pitches[skip:])
+    confidences = array(confidences[skip:])
+    times = [t * hop_s for t in range(len(pitches))]
+    #**************************************
+
+
+    ground_truth = os.path.splitext(filename)[0] + '.f0.Corrected'
+    if os.path.isfile(ground_truth):
+        ground_truth = array_from_text_file(ground_truth)
+        true_freqs = ground_truth[:,2]
+        true_freqs = ma.masked_where(true_freqs < 2, true_freqs)
+        true_times = float(samplerate) * ground_truth[:,0]
+        ax2.plot(true_times, true_freqs, 'r')
+        ax2.axis( ymin = 0.9 * true_freqs.min(), ymax = 1.1 * true_freqs.max() )
+
+    cleaned_pitches = pitches
+    cleaned_pitches = ma.masked_where(confidences < tolerance, cleaned_pitches)
+
+    octave_cleaned = octave_error(cleaned_pitches)
+    for i in range(1):
+        octave_cleaned = octave_error3(octave_cleaned)
+        octave_cleaned = silence_mask(octave_cleaned, signal2, silence_threshold)
+        octave_cleaned = octave_error(octave_cleaned)
+
+
+    
+    if Display_Plot:
+    ####PLOTTING######
+    #****************************************************
+        fig = plt.figure()
+        ax1 = fig.add_subplot(311)
+        ax1 = get_waveform_plot(filename, samplerate = samplerate, block_size = hop_s, ax = ax1)
+        plt.setp(ax1.get_xticklabels(), visible = False)
+        ax1.set_xlabel('')
+
+        #plot cleaned pitches
+        ax2 = fig.add_subplot(312, sharex = ax1)
+        ax2.plot(times, pitches, '.g')
+        ax2.plot(times, cleaned_pitches, '.-')
+        ax2.plot(times, octave_cleaned, '.r' )
+        plt.setp(ax2.get_xticklabels(), visible = False)
+        ax2.set_ylabel('f0 (midi)')
+
+        ##### plot confidence
+        ax3 = fig.add_subplot(313, sharex = ax1)
+        ax3.plot(times, confidences)
+        ax3.plot(times, [tolerance]*len(confidences)) # draw a line at tolerance
+        ax3.axis( xmin = times[0], xmax = times[-1])
+        ax3.set_ylabel('condidence')
+        set_xlabels_sample2time(ax3, times[-1], samplerate)
+        
+
+        
+    #*****************************************************
+
+    # load file and rms
+    #trumpet,_ = librosa.load(filename,sr=44100)
+    rms =  librosa.feature.rmse(y=signal)
+
+    #create a velocity reference********************************************
+    # Get peak rms value for file to set as reference for velocity = 100
+    midi_vel_ref = []
+    sig_len = int(len(signal)/1024.)
+    for si in xrange(0,sig_len - 1):
+        start = si * 1024
+        stop = start + 1024
+        midi_vel_ref = np.append(midi_vel_ref,rms_db(signal[start:stop]))
+        
+    midi_vel_ref = np.amax(midi_vel_ref)
+
+    x_rms = rms_db(signal)                          #this is going to be the frames for the midi note
+    #**********************************
+
+    ###standalone onset detection
+    #****************************************
+    onsets_clean, onsets_pos = onset_detect(rms, Display = False)
+    onsets_clean = np.array(onsets_clean, dtype = int)
+    midi_out_new2, midi_out_new =midi_output(onsets_clean, octave_cleaned)
+
+    for i in range(len(midi_out_new2)):
+        start = midi_out_new2[i][1]
+        stop = midi_out_new2[i][2]
+        midi_vel = midi_velocity(signal[start*512:stop*512], midi_vel_ref)  #this is going to neeed the frames in signal
+        midi_out_new2[i].append(midi_vel)
+    #print results
+    #*********************************************
+	output = np.zeros((len(midi_out_new2), len(midi_out_new2[0])))
+
+    for i in range(len(output)):
+        for j in range(len(output[0])):
+            output[i,j] = midi_out_new2[i][j]
+    output = np.rint(output)
+    output = np.array(output, dtype = int)
+
+    plt.show(block=False)
+    return output
+    #**********************************************
+
+def rms_db(signal):
+    x_sum = 0
+    x_ref_sum = 0
+    for i in signal:
+        x_sum += i ** 2
+    x_rms = sqrt(x_sum / len(signal))
+    return x_rms
+
+def midi_velocity(signal, reference):
+    x_sum = 0
+    x_ref_sum = 0
+    for i in signal:
+        x_sum += i ** 2
+    x_rms = sqrt(x_sum / len(signal))
+    x_rms_dB = 20 * log10(x_rms / reference)
+    midi_vel = round(127 * (10 ** (x_rms_dB / 40.)))
+    return int(midi_vel)
+
+
+
+
 def octave_error(in_array):
     winlen = 5             #window length = 2*n+1 must be odd number
     n = int(floor(winlen/2))
@@ -127,8 +223,6 @@ def octave_error(in_array):
         if 11.5 <= abs(in_array[i] - in_array[i+1])<= 12.5:  
             out_array[i] = np.median(out_array[len(in_array):int(len(in_array)-n)]) 
 
-    ##The output is rounded to the nearest whole number MIDI value
-    #return np.round(out_array, decimals = 0)
     return out_array
 
 def octave_error2(in_array):
@@ -157,7 +251,7 @@ def octave_error3(in_array):
             #print idx_start
     return out_array
 
-print confidences.shape
+
 def octave_error4(in_array):
     out_array = in_array*1
     idx_start = 0
@@ -190,10 +284,10 @@ def mask_clean(in_array, mask_data):
 
     return out_array
 
-def silence_mask(in_array, signal2):
+def silence_mask(in_array, signal2, silence_threshold):
     out_array = in_array*1
-    print "len of raw signal is:", len(signal2)
-    print "len of 512 array is :", len(out_array)
+    #print "len of raw signal is:", len(signal2)
+    #print "len of 512 array is :", len(out_array)
 
     if len(out_array)>len(signal2):
        signal2 = np.hstack((signal2, 0))
@@ -204,70 +298,8 @@ def silence_mask(in_array, signal2):
 
     return out_array
 
-def array_from_text_file(filename, dtype = 'float'):
-    import os.path
-    from numpy import array
-    filename = os.path.join(os.path.dirname(__file__), filename)
-    return array([line.split() for line in open(filename).readlines()],
-        dtype = dtype)
 
-ax2 = fig.add_subplot(312, sharex = ax1)
-import sys, os.path
-ground_truth = os.path.splitext(filename)[0] + '.f0.Corrected'
-if os.path.isfile(ground_truth):
-    ground_truth = array_from_text_file(ground_truth)
-    true_freqs = ground_truth[:,2]
-    true_freqs = ma.masked_where(true_freqs < 2, true_freqs)
-    true_times = float(samplerate) * ground_truth[:,0]
-    ax2.plot(true_times, true_freqs, 'r')
-    ax2.axis( ymin = 0.9 * true_freqs.min(), ymax = 1.1 * true_freqs.max() )
-
-#*************************************   
-#### plot raw pitches
-ax2.plot(times, pitches, '.g')
-# plot cleaned up pitches
-cleaned_pitches = pitches
-#cleaned_pitches = ma.masked_where(cleaned_pitches < 0, cleaned_pitches)
-#cleaned_pitches = ma.masked_where(cleaned_pitches > 120, cleaned_pitches)
-cleaned_pitches = ma.masked_where(confidences < tolerance, cleaned_pitches)
-ax2.plot(times, cleaned_pitches, '.-')
-#*******************************************************
-####add plot of octave cleaned data###
-octave_cleaned = octave_error(cleaned_pitches)
-for i in range(1):
-    #octave_cleaned = octave_error3(octave_cleaned)
-    octave_cleaned = octave_error3(octave_cleaned)
-    octave_cleaned = silence_mask(octave_cleaned, signal2)
-    octave_cleaned = octave_error(octave_cleaned)
-    #octave_cleaned= mask_clean(octave_cleaned, ma.getdata(octave_cleaned))
-    #octave_cleaned = octave_error(octave_cleaned)
-
-#octave_cleaned = octave_error4(octave_cleaned)
-
-
-#****************************************************
-ax2.plot(times, octave_cleaned, '.r' )
-#ax2.axis( ymin = 0.9 * cleaned_pitches.min(), ymax = 1.1 * cleaned_pitches.max() )
-#ax2.axis( ymin = 55, ymax = 70 )
-plt.setp(ax2.get_xticklabels(), visible = False)
-ax2.set_ylabel('f0 (midi)')
-
-##### plot confidence
-ax3 = fig.add_subplot(313, sharex = ax1)
-# plot the confidence
-ax3.plot(times, confidences)
-# draw a line at tolerance
-ax3.plot(times, [tolerance]*len(confidences))
-ax3.axis( xmin = times[0], xmax = times[-1])
-ax3.set_ylabel('condidence')
-set_xlabels_sample2time(ax3, times[-1], samplerate)
-
-# load file and rms
-trumpet,_ = librosa.load(filename,sr=44100)
-rms =  librosa.feature.rmse(y=trumpet)
-
-
-def onset_detect(filename, Display = True):
+def onset_detect(rms, Display = True):
     # Initialize
     onsets = np.zeros(200)
     onsets_pos = np.zeros(200)
@@ -318,8 +350,7 @@ def onset_detect(filename, Display = True):
 
     return onsets_clean, onsets_pos
             
-onsets_clean, onsets_pos = onset_detect(filename, Display = True)
-onsets_clean = np.array(onsets_clean, dtype = int)
+
 
 
 def midi_output(onsets_clean, octave_cleaned):
@@ -376,64 +407,3 @@ def midi_output(onsets_clean, octave_cleaned):
              midi_out_new2.append(midi_out_new[i])
 
     return midi_out_new2, midi_out_new
-
-midi_out_new2, midi_out_new =midi_output(onsets_clean, octave_cleaned)
-
-print "midi_out is length of :", len(midi_out_new2)
-for i in midi_out_new2:
-    print i
-print "Midi note unfiltered length:", len(midi_out_new)
-for i in midi_out_new:
-    print i
-
-# for i in range(len(onsets_clean)-1):  
-#     #i = m_start
-#     shift_found = False
-#     for j in range(onsets_clean[i],onsets_clean[i+1]):
-#         #if 11.5 >= abs(octave_cleaned[j+1] - octave_cleaned[j+2]) 12.5 or octave_cleaned[j+1]==0: 
-#         if  round(abs(octave_cleaned[j+1] - octave_cleaned[j+2]))%12 !=  0  or (octave_cleaned[j+3]==0):
-#             print "TRANSITION", j
-#             shift_stop = j
-#             shift_found = True
-
-#             break
-
-#     if shift_found == True:
-#         midi_stop = shift_stop
-#     else:
-#         midi_stop = onsets_clean[i+1]
-
-#     midi_out.append([octave_cleaned[i+5], onsets_clean[i], midi_stop])
-#     shift_found == False
-
-
-
-# for i in range(len(onsets_clean)-1):  
-#     #i = m_start
-#     shift_found = False
-#     for j in range(onsets_clean[i],onsets_clean[i+1]):
-#         #if 11.5 >= abs(octave_cleaned[j+1] - octave_cleaned[j+2]) 12.5 or octave_cleaned[j+1]==0: 
-#         if  round(abs(octave_cleaned[j+1] - octave_cleaned[j+2]))%12 !=  0  or (octave_cleaned[j+3]==0):
-#             print "TRANSITION", j
-#             shift_stop = j
-#             shift_found = True
-
-#             break
-
-#     if shift_found == True:
-#         midi_stop = shift_stop
-#     else:
-#         midi_stop = onsets_clean[i+1]
-
-#     midi_out.append([octave_cleaned[i+5], onsets_clean[i], midi_stop])
-#     shift_found == False
-
-# midi_out.append([octave_cleaned[onsets_clean[i+1]], onsets_clean[i+1], len(octave_cleaned)])
-
-#print midi_out
-
-plt.show()
-
-
-
-#plt.savefig(os.path.basename(filename) + '.svg')

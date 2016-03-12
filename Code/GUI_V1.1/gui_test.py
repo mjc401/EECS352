@@ -2,8 +2,6 @@ from Tkinter import *
 import tkFileDialog # Get file path 
 #from Record import record_audio, stop_record
 import os, sys, numpy as np, pyaudio, wave, tkFont
-#from PIL import Image, ImageTk
-
 
 # Plot in GUI
 
@@ -14,6 +12,10 @@ from matplotlib.figure import Figure
 
 
 import librosa
+
+import array_2_midi as array_midi
+import pitch_track_fn as pitch_track
+import midi_test
 
 	
 
@@ -43,7 +45,13 @@ class Application(Frame):
 			self.rec_data_np.append(np.fromstring(rec_samps, dtype=np.float32)) # pyaudio data converted to numpy
 			root.update() # make sure GUI can still update & not get stuck in loop
 
-		self.rec_data_np = np.hstack(self.rec_data_np) # output numpy data array
+		#self.rec_data_np = np.hstack(self.rec_data_np) # output numpy data array
+		waveFile = wave.open("rec_data.wav", 'wb')
+		waveFile.setnchannels(1)
+		waveFile.setsampwidth(4)
+		waveFile.setframerate(44100)
+		waveFile.writeframes(b''.join(self.rec_data))
+		waveFile.close()
 
 		# Close Stream
 		rec_stream.stop_stream()
@@ -183,13 +191,43 @@ class Application(Frame):
 		self.stop_audio_button["state"] = NORMAL
 		
 	# Run Aubio Demo
-	def run_pitch_track(self):
-		self.wav_run = wave.open(self.wave_path, 'rb')
-		self.sr = self.wav_run.getframerate()
-		os.system('python test_aubio.py %s %d' % (self.wave_path,self.sr))
+	#def run_pitch_track(self):
+	#	self.wav_run = wave.open(self.wave_path, 'rb')
+	#	self.sr = self.wav_run.getframerate()
+	#	os.system('python test_aubio.py %s %d' % (self.wave_path,self.sr))
 
 	# Run InstruSwitch
-#	def run_instruswitch(self):
+	def run_instruswitch(self):
+		self.plot_sel = self.plot_var.get() # Plot checkbox
+		
+		self.output = []
+		num_instrument = self.ibvar.get()
+		if num_instrument == 1:
+			instrument = "Piano"
+		if num_instrument == 2:
+			instrument = "Violin"
+		if num_instrument == 3:
+			instrument = "ASax"
+		if num_instrument == 4:
+			instrument = "EBass"
+
+		if self.rb_sel == 1: # File Upload
+			self.instru_samples = self.wave_path
+			self.wav_run = wave.open(self.wave_path, 'rb')
+			self.sr = self.wav_run.getframerate()
+		else: # Record
+			self.instru_samples = "rec_data.wav"
+			self.sr = 44100
+	
+		pitch_data = pitch_track.pitch_track(self.instru_samples,self.sr,Display=self.plot_sel)
+		midi_file = array_midi.array_to_MIDI(pitch_data)
+		print midi_file
+		self.output = midi_test.make_output(instrument, midi_file)
+		
+		self.play_button["state"] = NORMAL
+		self.stop_audio_button["state"] = NORMAL
+		self.save_button["state"] = NORMAL
+		
 		
 	
 	# Input Select		
@@ -251,14 +289,14 @@ class Application(Frame):
 		self.audio_sel =  self.playbvar.get()
 		if self.audio_sel == 1: # Save Original
 			if self.rb_sel == 2: # Save Recording
-				self.save_path = tkFileDialog.asksaveasfile(mode='w', defaultextension=".wav")
+				self.save_path = tkFileDialog.asksaveasfilename(defaultextension=".wav")
 				waveFile = wave.open(self.save_path, 'wb')
 				waveFile.setnchannels(1)
-				print self.audio_rec.get_sample_size(pyaudio.paFloat32)
 				waveFile.setsampwidth(self.audio_rec.get_sample_size(pyaudio.paFloat32))
 				waveFile.setframerate(44100)
 				waveFile.writeframes(b''.join(self.rec_data))
 				waveFile.close()
+				os.remove(self.save_path)
 				
 		if self.audio_sel == 2: # Save Output
 			self.save_path = tkFileDialog.asksaveasfile(mode='w', defaultextension=".wav")
@@ -386,7 +424,7 @@ class Application(Frame):
 		self.rps_label.grid(row=6, column=8, columnspan=18, ipady=10, sticky=W+E, pady=5)
 		
 		# Run Button
-		self.run_button = Button(self, text="Run InstruSwitch", command=self.run_pitch_track)
+		self.run_button = Button(self, text="Run InstruSwitch", command=self.run_instruswitch)
 		self.run_button.grid(row=7, column=8, columnspan=3, pady=5)
 		
 		# Play Button
@@ -442,6 +480,9 @@ class Application(Frame):
 		self.stop_store2_button.grid(row=11, column=12, pady=5)'''
 		
 	# Plots, etc.
+		self.plot_var = IntVar()
+		self.plot = Checkbutton(self, text="Plot", variable=self.plot_var,bg="grey85")
+		self.plot.grid(row=7,column=2)
 
 	# Initialize
 		self.file_rb.invoke()
@@ -470,4 +511,5 @@ root.attributes("-topmost", True)
 root.attributes("-topmost", False)
 root.wm_title("InstruSwitch v1.0")
 app.mainloop()
+os.remove("rec_data.wav")
 root.destroy()
