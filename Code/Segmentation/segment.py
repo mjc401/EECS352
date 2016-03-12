@@ -2,7 +2,7 @@ import numpy as np, scipy as sp, matplotlib.pyplot as plt, matplotlib, sklearn, 
 import math
 from mido import Message, MidiFile, MidiTrack
 
-
+# MIDI velocity function
 def midi_velocity(signal, reference):
 	x_sum = 0
 	x_ref_sum = 0
@@ -13,6 +13,7 @@ def midi_velocity(signal, reference):
 	midi_vel = round(127 * (10 ** (x_rms_dB / 40.)))
 	return int(midi_vel)
 
+# rms amplitude function
 def rms_db(signal, reference):
 	x_sum = 0
 	x_ref_sum = 0
@@ -54,30 +55,36 @@ for ii in xrange(0,len(onsets)):
 			
 onsets_clean = onsets_clean[onsets_clean != 0.5]
 
+# MIDI velocity
 midi_vel_ref = rms_db(trumpet,1)
 print midi_vel_ref
 print midi_velocity(trumpet[0:512*130],midi_vel_ref)
 print midi_velocity(trumpet[512*130:512*155],midi_vel_ref)
 
+# Test Data
 test_data1 = [60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)]
 test_data2 = [69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)]
 
 test_data = np.array([[60,0,130,midi_velocity(trumpet[0:512*130],midi_vel_ref)],[69,130,155,midi_velocity(trumpet[512*130:512*155],midi_vel_ref)]])
 
+# Mido time works as tick differences so get amount between each event (1000 ticks per bar at 120 bpm, 512 samps per frame, & sample rate of 44100 Hz)
 test_duration = (np.diff(np.sort(np.concatenate((test_data[:,1],test_data[:,2])))) * 512./44100*1000).astype(int)
 #print test_duration
 
+# write MIDI file
 with MidiFile() as outfile:
+	# Initialize
 	track = MidiTrack()
 	outfile.tracks.append(track)
 
+	# add MIDI events
 	track.append(Message('program_change', program=12))
 	track.append(Message('note_on', note=test_data1[0], velocity=test_data1[3], time=int(test_data1[1]*512./44100*1000)))
 	track.append(Message('note_off', note=test_data1[0], velocity=test_data1[3], time=test_duration[0]))
 	track.append(Message('note_on', note=test_data2[0], velocity=test_data2[3], time=test_duration[1]))
 	track.append(Message('note_off', note=test_data2[0], velocity=test_data2[3], time=test_duration[2]))
 
-	outfile.save('test.mid')
+	outfile.save('test.mid') # output MIDI file
 
 # Plot
 plt.figure()
