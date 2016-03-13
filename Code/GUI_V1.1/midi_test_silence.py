@@ -2,7 +2,7 @@ import mido
 import librosa
 import numpy as np
 
-def make_output(instrument, midi_file, transpose):
+def make_output(instrument, midi_file):
 	# All Piano Notes
 	midi_to_note = ["A0", "A#0", "B0", "C1", "C#1", "D1", "D#1", "E1", "F1", 
 					"F#1", "G1", "G#1", "A1", "A#1", "B1", "C2", "C#2", "D2", 
@@ -30,22 +30,22 @@ def make_output(instrument, midi_file, transpose):
 		if message.type == "note_on":
 			# if time > 0 on a note_on message, because the last note was a 
 			# note_off, there is silence between the two
-			"""if message.time > 0:
+			if message.time > 0:
 				# Calculate the number of silent frames and add it to the signal
 				num_silence_frames = int(message.time * 44100)
 				silence = np.zeros(num_silence_frames)
-				signal = np.append(signal, silence)"""
+				signal = np.append(signal, silence)
 
 			# Get duration of the note
-			try:
+			"""try:
 				duration = messages[i+1].time + messages[i+2].time
-			except IndexError:
-				duration = messages[i+1].time
+			except IndexError:"""
+			duration = messages[i+1].time
 
 			# Create string with path to appropriate file, subtract 21 from midi 
 			# note b/c they start at 21
 			filename = "../../Samples/SoundBank/" + instrument + "/" + instrument + \
-				midi_to_note[message.note-21 + transpose] + ".wav"
+				midi_to_note[message.note-21] + ".wav"
 			
 			# load the file from the soundbank
 			current_note, sr = librosa.load(filename, sr=44100)

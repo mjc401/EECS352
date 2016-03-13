@@ -19,7 +19,7 @@ def pitch_track(filename, samplerate, Display=False):
 
     #########VARY this Value
     tolerance = 0.80
-    silence_threshold = 0.00004
+    silence_threshold = 0.02
     #####################
     # if len(sys.argv) < 2:
     #     print "Usage: %s <filename> [samplerate]" % sys.argv[0]
@@ -105,33 +105,6 @@ def pitch_track(filename, samplerate, Display=False):
         octave_cleaned = octave_error3(octave_cleaned)
         octave_cleaned = silence_mask(octave_cleaned, signal2, silence_threshold)
         octave_cleaned = octave_error(octave_cleaned)
-
-
-    
-    if Display_Plot:
-    ####PLOTTING######
-    #****************************************************
-        fig = plt.figure()
-        ax1 = fig.add_subplot(311)
-        ax1 = get_waveform_plot(filename, samplerate = samplerate, block_size = hop_s, ax = ax1)
-        plt.setp(ax1.get_xticklabels(), visible = False)
-        ax1.set_xlabel('')
-
-        #plot cleaned pitches
-        ax2 = fig.add_subplot(312, sharex = ax1)
-        ax2.plot(times, pitches, '.g')
-        ax2.plot(times, cleaned_pitches, '.-')
-        ax2.plot(times, octave_cleaned, '.r' )
-        plt.setp(ax2.get_xticklabels(), visible = False)
-        ax2.set_ylabel('f0 (midi)')
-
-        ##### plot confidence
-        ax3 = fig.add_subplot(313, sharex = ax1)
-        ax3.plot(times, confidences)
-        ax3.plot(times, [tolerance]*len(confidences)) # draw a line at tolerance
-        ax3.axis( xmin = times[0], xmax = times[-1])
-        ax3.set_ylabel('condidence')
-        set_xlabels_sample2time(ax3, times[-1], samplerate)
         
 
         
@@ -179,7 +152,33 @@ def pitch_track(filename, samplerate, Display=False):
     output = np.rint(output)
     output = np.array(output, dtype = int)
 
-    plt.show(block=False)
+    if Display_Plot:
+    ####PLOTTING######
+    #****************************************************
+        fig = plt.figure()
+        ax1 = fig.add_subplot(311)
+        ax1 = get_waveform_plot(filename, samplerate = samplerate, block_size = hop_s, ax = ax1)
+        plt.setp(ax1.get_xticklabels(), visible = False)
+        ax1.set_xlabel('')
+
+        #plot cleaned pitches
+        ax2 = fig.add_subplot(312, sharex = ax1)
+        ax2.plot(times, pitches, '.g')
+        ax2.plot(times, cleaned_pitches, '.-')
+        ax2.plot(times, octave_cleaned, '.r' )
+        plt.setp(ax2.get_xticklabels(), visible = False)
+        ax2.set_ylabel('f0 (midi)')
+        ax2.vlines(onsets_clean * 512,0,120,color='k',linestyle='--',linewidth=1)
+
+        ##### plot confidence
+        ax3 = fig.add_subplot(313, sharex = ax1)
+        ax3.plot(times, confidences)
+        ax3.plot(times, [tolerance]*len(confidences)) # draw a line at tolerance
+        ax3.axis( xmin = times[0], xmax = times[-1])
+        ax3.set_ylabel('condidence')
+        set_xlabels_sample2time(ax3, times[-1], samplerate)
+
+	plt.show(block=False)
     return output
     #**********************************************
 
