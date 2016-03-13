@@ -179,7 +179,7 @@ def pitch_track(filename, samplerate, Display=False):
         set_xlabels_sample2time(ax3, times[-1], samplerate)
 
 	plt.show(block=False)
-    return output
+    return output, len(signal)
     #**********************************************
 
 def rms_db(signal):

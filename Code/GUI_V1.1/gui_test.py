@@ -225,8 +225,8 @@ class Application(Frame):
 			self.instru_samples = "rec_data.wav"
 			self.sr = 44100
 	
-		pitch_data = pitch_track.pitch_track(self.instru_samples,self.sr,Display=self.plot_sel)
-		midi_file = array_midi.array_to_MIDI(pitch_data)
+		pitch_data, s_length = pitch_track.pitch_track(self.instru_samples,self.sr,Display=self.plot_sel)
+		midi_file = array_midi.array_to_MIDI(pitch_data, s_length)
 		print midi_file
 		self.output = midi_test.make_output(instrument, midi_file, self.transpose_note)
 		
@@ -419,7 +419,7 @@ class Application(Frame):
 		
 		# Transpose
 		self.trans_var = IntVar()
-		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=self.trans_var, bg="grey85",resolution=1,length=125)
+		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=self.trans_var, bg="grey85",resolution=1,length=130)
 		self.trans_slider.grid(row=7, column=1, columnspan=2) 
 		self.tr_label = Label(self, text="Semitones", bg="grey85")
 		self.tr_label.grid(row=8, column=1, columnspan=2)
