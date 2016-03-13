@@ -45,13 +45,16 @@ class Application(Frame):
 			self.rec_data_np.append(np.fromstring(rec_samps, dtype=np.float32)) # pyaudio data converted to numpy
 			root.update() # make sure GUI can still update & not get stuck in loop
 
-		#self.rec_data_np = np.hstack(self.rec_data_np) # output numpy data array
-		waveFile = wave.open("rec_data.wav", 'wb')
-		waveFile.setnchannels(1)
-		waveFile.setsampwidth(4)
-		waveFile.setframerate(44100)
-		waveFile.writeframes(b''.join(self.rec_data))
-		waveFile.close()
+		self.rec_data_np = np.hstack(self.rec_data_np) # output numpy data array
+		librosa.output.write_wav("rec_data.wav", self.rec_data_np, 44100)
+
+		
+		#waveFile = wave.open("rec_data.wav", 'wb')
+		#waveFile.setnchannels(1)
+		#waveFile.setsampwidth(4)
+		#waveFile.setframerate(44100)
+		#waveFile.writeframes(b''.join(self.rec_data))
+		#waveFile.close()
 
 		# Close Stream
 		rec_stream.stop_stream()
@@ -199,6 +202,7 @@ class Application(Frame):
 	# Run InstruSwitch
 	def run_instruswitch(self):
 		self.plot_sel = self.plot_var.get() # Plot checkbox
+		self.transpose_note = self.trans_var.get()
 		
 		self.output = []
 		num_instrument = self.ibvar.get()
@@ -222,7 +226,7 @@ class Application(Frame):
 		pitch_data = pitch_track.pitch_track(self.instru_samples,self.sr,Display=self.plot_sel)
 		midi_file = array_midi.array_to_MIDI(pitch_data)
 		print midi_file
-		self.output = midi_test.make_output(instrument, midi_file)
+		self.output = midi_test.make_output(instrument, midi_file, self.transpose_note)
 		
 		self.play_button["state"] = NORMAL
 		self.stop_audio_button["state"] = NORMAL
@@ -290,16 +294,17 @@ class Application(Frame):
 		if self.audio_sel == 1: # Save Original
 			if self.rb_sel == 2: # Save Recording
 				self.save_path = tkFileDialog.asksaveasfilename(defaultextension=".wav")
-				waveFile = wave.open(self.save_path, 'wb')
-				waveFile.setnchannels(1)
-				waveFile.setsampwidth(self.audio_rec.get_sample_size(pyaudio.paFloat32))
-				waveFile.setframerate(44100)
-				waveFile.writeframes(b''.join(self.rec_data))
-				waveFile.close()
-				os.remove(self.save_path)
+				#waveFile = wave.open(self.save_path, 'wb')
+				#waveFile.setnchannels(1)
+				#waveFile.setsampwidth(self.audio_rec.get_sample_size(pyaudio.paFloat32))
+				#waveFile.setframerate(44100)
+				#waveFile.writeframes(b''.join(self.rec_data))
+				#waveFile.close()
+				#os.remove(self.save_path)
+				librosa.output.write_wav(self.save_path, self.rec_data_np, 44100)
 				
 		if self.audio_sel == 2: # Save Output
-			self.save_path = tkFileDialog.asksaveasfile(mode='w', defaultextension=".wav")
+			self.save_path = tkFileDialog.asksaveasfilename(defaultextension=".wav")
 			librosa.output.write_wav(self.save_path, self.output, 44100)
 			
 	# Instrument Menu Text		
@@ -411,8 +416,8 @@ class Application(Frame):
 		self.input_inst.menu.add_radiobutton(label="Bass", variable=self.ibvar, value=4,command=self.ib_sel)
 		
 		# Transpose
-		trans_var = IntVar()
-		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=trans_var, bg="grey85")
+		self.trans_var = IntVar()
+		self.trans_slider = Scale(self, from_=-48, to=48, orient=HORIZONTAL, label="Transpose", variable=self.trans_var, bg="grey85",resolution=1,length=125)
 		self.trans_slider.grid(row=7, column=1, columnspan=2) 
 		self.tr_label = Label(self, text="Semitones", bg="grey85")
 		self.tr_label.grid(row=8, column=1, columnspan=2)
@@ -482,7 +487,7 @@ class Application(Frame):
 	# Plots, etc.
 		self.plot_var = IntVar()
 		self.plot = Checkbutton(self, text="Plot", variable=self.plot_var,bg="grey85")
-		self.plot.grid(row=7,column=2)
+		self.plot.grid(row=7,column=3,padx=5)
 
 	# Initialize
 		self.file_rb.invoke()

@@ -2,7 +2,7 @@ import mido
 import librosa
 import numpy as np
 
-def make_output(instrument, midi_file):
+def make_output(instrument, midi_file, transpose):
 	# All Piano Notes
 	midi_to_note = ["A0", "A#0", "B0", "C1", "C#1", "D1", "D#1", "E1", "F1", 
 					"F#1", "G1", "G#1", "A1", "A#1", "B1", "C2", "C#2", "D2", 
@@ -23,7 +23,7 @@ def make_output(instrument, midi_file):
 		print message
 		if message.type == "note_on":
 			filename = "../../Samples/SoundBank/" + instrument + "/" + instrument + \
-				midi_to_note[message.note-21] + ".wav"
+				midi_to_note[message.note-21 + transpose] + ".wav"
 			
 			current_note, sr = librosa.load(filename, sr=44100)
 			signal = np.append(signal, current_note)
