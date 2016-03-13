@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from Tkinter import *
 import tkFileDialog # Get file path 
 #from Record import record_audio, stop_record
@@ -395,7 +397,7 @@ class Application(Frame):
 		
 		# Stop Button (Record)
 		self.stop_button = Button(self, command=self.stop_rec)
-		self.stop_img = PhotoImage(file="./GUI_images/Stop.gif")
+		self.stop_img = PhotoImage(file="./GUI_images/stop.gif")
 		self.stop_button["image"] = self.stop_img
 		self.stop_button.grid(row=4, column=3, sticky=W)
 		
@@ -516,5 +518,6 @@ root.attributes("-topmost", True)
 root.attributes("-topmost", False)
 root.wm_title("InstruSwitch v1.0")
 app.mainloop()
-os.remove("rec_data.wav")
+if app.rb_sel == 2:
+	os.remove("rec_data.wav")
 root.destroy()

@@ -19,7 +19,7 @@ def pitch_track(filename, samplerate, Display=False):
 
     #########VARY this Value
     tolerance = 0.80
-    silence_threshold = 0.003
+    silence_threshold = 0.00004
     #####################
     # if len(sys.argv) < 2:
     #     print "Usage: %s <filename> [samplerate]" % sys.argv[0]
@@ -161,15 +161,18 @@ def pitch_track(filename, samplerate, Display=False):
     onsets_clean = np.array(onsets_clean, dtype = int)
     midi_out_new2, midi_out_new =midi_output(onsets_clean, octave_cleaned)
 
+    print midi_out_new2, onsets_clean, midi_out_new
+
     for i in range(len(midi_out_new2)):
         start = midi_out_new2[i][1]
         stop = midi_out_new2[i][2]
         midi_vel = midi_velocity(signal[start*512:stop*512], midi_vel_ref)  #this is going to neeed the frames in signal
         midi_out_new2[i].append(midi_vel)
     #print results
+
     #*********************************************
 	output = np.zeros((len(midi_out_new2), len(midi_out_new2[0])))
-
+	
     for i in range(len(output)):
         for j in range(len(output[0])):
             output[i,j] = midi_out_new2[i][j]
@@ -364,9 +367,11 @@ def midi_output(onsets_clean, octave_cleaned):
     midi_note = 0
 
     for i in range(len(octave_cleaned)-2): 
-        if  round(abs(octave_cleaned[i+1] - octave_cleaned[i+2]))%12 !=  0  or (octave_cleaned[i]==0  and octave_cleaned[i+1]>0) or (i in onsets_clean):
-                trans_list.append(i)
-
+        if round(abs(octave_cleaned[i+1] - octave_cleaned[i+2]))%12 !=  0  or (octave_cleaned[i]==0  and octave_cleaned[i+1]>0) or (octave_cleaned[i]>0  and octave_cleaned[i+1]==0) or (i in onsets_clean):
+            trans_list.append(i)
+				
+    trans_list.append(len(octave_cleaned))
+	
     midi_start = trans_list[0]
     real_note = False
     for i in range(0,len(trans_list)-1):
@@ -377,8 +382,7 @@ def midi_output(onsets_clean, octave_cleaned):
             midi_start= trans_list[i]
             midi_stop = trans_list[i+1]
             midi_out.append([octave_cleaned[trans_list[i]+2],midi_start, midi_stop] )
-
-    
+	
     for i in range(len(midi_out)):
         if abs(midi_out[i][1] - midi_out[i][2]) >=6:
             midi_out_new.append(midi_out[i])

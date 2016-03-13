@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from Tkinter import *
 import tkFileDialog # Get file path 
 #from Record import record_audio, stop_record

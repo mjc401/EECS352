@@ -23,7 +23,7 @@ def rms_db(signal):
 	return x_rms
 
 # load file and rms
-trumpet,_ = librosa.load("clarinet_test.wav",sr=44100)
+trumpet,_ = librosa.load("guitar_test.wav",sr=44100)
 rms =  librosa.feature.rmse(y=trumpet)
 
 
@@ -67,7 +67,7 @@ for si in xrange(0,sig_len - 1):
 	
 midi_vel_ref = np.amax(midi_vel_ref)
 
-print midi_vel_ref
+'''print midi_vel_ref
 print rms_db(trumpet[0:512*130])
 print rms_db(trumpet[512*130:512*155])
 print rms_db(trumpet[512*155:512*175])
@@ -109,10 +109,10 @@ def array_to_MIDI(array):
 				track.append(Message('note_on', note=array[0,0], velocity=array[0,3], time=int(array[0,1]*512./44100*960)))
 				track.append(Message('note_off', note=array[0,0], velocity=array[0,3], time=test_duration[0]))
 			else:
-				track.append(Message('note_on', note=array[segment,0], velocity=array[segment,3], time=test_duration[segment]
+				track.append(Message('note_on', note=array[segment,0], velocity=array[segment,3], time=test_duration[segment]))
 				track.append(Message('note_off', note=array[segment,0], velocity=array[segment,3], time=test_duration[segment + 1]))
 		
-	return outfile
+	return outfile'''
 
 
 	# write MIDI file
