@@ -35,6 +35,6 @@ def array_to_MIDI(array,sig_length):
 		#track_end = int(sig_length - 512./44100*960 * array[-1,2])
 		#track.append(MetaMessage('end_of_track',time=track_end))
 				
-		outfile.save('output.mid') # output MIDI file
+		#outfile.save('output.mid') # output MIDI file
 		
 	return outfile

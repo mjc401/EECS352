@@ -18,7 +18,7 @@ def make_output(instrument, midi_file, transpose):
 	# Open file
 	print "It's me bitches"
 	mid = midi_file
-	mid.save("midi_output.mid")
+	#mid.save("midi_output.mid")
 	signal = np.zeros(1)
 
 	i = 0 # so we can grab the next message using i+1

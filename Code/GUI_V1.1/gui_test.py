@@ -226,13 +226,14 @@ class Application(Frame):
 			self.sr = 44100
 	
 		pitch_data, s_length = pitch_track.pitch_track(self.instru_samples,self.sr,Display=self.plot_sel)
-		midi_file = array_midi.array_to_MIDI(pitch_data, s_length)
-		print midi_file
-		self.output = midi_test.make_output(instrument, midi_file, self.transpose_note)
+		self.midi_file = array_midi.array_to_MIDI(pitch_data, s_length)
+		print self.midi_file
+		self.output = midi_test.make_output(instrument, self.midi_file, self.transpose_note)
 		
 		self.play_button["state"] = NORMAL
 		self.stop_audio_button["state"] = NORMAL
 		self.save_button["state"] = NORMAL
+		self.save_midi_button["state"] = NORMAL
 		
 		
 	
@@ -328,6 +329,12 @@ class Application(Frame):
 			self.input_mb["text"] = "Mic"
 		elif self.in_men_txt == 2:
 			self.input_mb["text"] = "External Instrument"
+			
+	# Save MIDI
+	def save_midi(self):
+		self.save_midi_path = tkFileDialog.asksaveasfilename(defaultextension=".mid")
+		self.midi_file.save(self.save_midi_path)
+		
 
 	# Create Widgets
 	def createWidgets(self): 
@@ -456,6 +463,8 @@ class Application(Frame):
 		self.save_button = Button(self, text="Save", state=DISABLED, command=self.save_file)
 		self.save_button.grid(row=9, column=8, sticky=W, pady=5)
 		
+		self.save_midi_button = Button(self, text="Save Midi File", state=DISABLED, command=self.save_midi)
+		self.save_midi_button.grid(row=9,column=1)
 	
 		# Store Play
 		'''self.store1_label = Label(self, text="Store 1", bg="grey85")
