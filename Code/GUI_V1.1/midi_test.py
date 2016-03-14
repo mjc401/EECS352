@@ -24,7 +24,6 @@ def make_output(instrument, midi_file, transpose):
 	i = 0 # so we can grab the next message using i+1
 	messages = list(mid.play()) # turn generator into a list so we can index
 								# into it. This is the list of midi messages
-
 	for message in messages:
 		# Only deal with on messages, get off messages with indexing using i+1
 		if message.type == "note_on":

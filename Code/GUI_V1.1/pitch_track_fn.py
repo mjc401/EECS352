@@ -18,7 +18,7 @@ def pitch_track(filename, samplerate, Display=False):
     from aubio import source, pitch, freqtomidi
 
     #########VARY this Value
-    tolerance = 0.80
+    tolerance = 0.75
     silence_threshold = 0.00004
     #####################
     # if len(sys.argv) < 2:
@@ -134,7 +134,7 @@ def pitch_track(filename, samplerate, Display=False):
     onsets_clean = np.array(onsets_clean, dtype = int)
     midi_out_new2, midi_out_new =midi_output(onsets_clean, octave_cleaned)
 
-    print midi_out_new2, onsets_clean, midi_out_new
+    #print midi_out_new2, onsets_clean, midi_out_new
 
     for i in range(len(midi_out_new2)):
         start = midi_out_new2[i][1]
@@ -178,6 +178,8 @@ def pitch_track(filename, samplerate, Display=False):
         ax3.set_ylabel('condidence')
         set_xlabels_sample2time(ax3, times[-1], samplerate)
 
+	print len(output)
+	print output
 	plt.show(block=False)
     return output, len(signal)
     #**********************************************
@@ -387,21 +389,24 @@ def midi_output(onsets_clean, octave_cleaned):
             midi_out.append([octave_cleaned[trans_list[i]+2],midi_start, midi_stop] )
 	
     for i in range(len(midi_out)):
-        if abs(midi_out[i][1] - midi_out[i][2]) >=6:
+        if abs(midi_out[i][1] - midi_out[i][2]) >=4:
             midi_out_new.append(midi_out[i])
 
     i = 0
     #for i in range(len(midi_out_new)-1):
-    while i < len(midi_out_new)-1:
+    while i < len(midi_out_new):
         repeat = False
         j = i #when repeat is false
-        while (midi_out_new[i][2] == midi_out_new[i+1][1]) and (midi_out_new[i][0] == midi_out_new[i+1][0]):
+        while (i< len(midi_out_new)-1) and (midi_out_new[i][2] == midi_out_new[i+1][1]) and (midi_out_new[i][0] == midi_out_new[i+1][0]):
             midi_note = midi_out_new[j][0]
             midi_start = midi_out_new[j][1]
             midi_stop = midi_out_new[i+1][2]
             repeat = True
+            k = True
             #print "reating i", i, midi_stop
+            print i
             i+=1
+
         if repeat:
             #print "repeat iteration:", i, [midi_note,midi_start,midi_stop]
             midi_out_new2.append([midi_note,midi_start,midi_stop])
@@ -410,7 +415,10 @@ def midi_output(onsets_clean, octave_cleaned):
             midi_out_new2.append(midi_out_new[j])
             #print "non repeat iteration:", i, midi_out_new[j]
             i +=1
-        if i == len(midi_out_new)-1 and repeat == False:
+            k = False
+        if i == len(midi_out_new)-1 and repeat == False and k==False:
              midi_out_new2.append(midi_out_new[i])
 
     return midi_out_new2, midi_out_new
+	
+#out = pitch_track("test1.wav", 44100, Display=True)

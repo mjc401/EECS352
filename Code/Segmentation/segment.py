@@ -23,7 +23,7 @@ def rms_db(signal):
 	return x_rms
 
 # load file and rms
-trumpet,_ = librosa.load("viking.wav",sr=44100)
+trumpet,_ = librosa.load("rec_data.wav",sr=44100)
 rms =  librosa.feature.rmse(y=trumpet)
 
 
@@ -115,7 +115,7 @@ def array_to_MIDI(array):
 	return outfile'''
 
 
-	# write MIDI file
+'''	# write MIDI file
 with MidiFile() as outfile:
 		# Initialize
 	track = MidiTrack()
@@ -142,7 +142,7 @@ with MidiFile() as outfile:
 	track.append(Message('note_on', note=60, velocity=20, time=480))
 	track.append(Message('note_off', note=60, velocity=20, time=480))
 
-outfile.save('test.mid') # output MIDI file
+outfile.save('test.mid') # output MIDI file'''
 
 # Plot
 plt.figure()
