@@ -23,7 +23,7 @@ def rms_db(signal):
 	return x_rms
 
 # load file and rms
-trumpet,_ = librosa.load("guitar_test.wav",sr=44100)
+trumpet,_ = librosa.load("viking.wav",sr=44100)
 rms =  librosa.feature.rmse(y=trumpet)
 
 
@@ -37,8 +37,8 @@ k=0
 ## Two criterion: one stricter (greater possibility of onset) and one less (possibility but should be checked with pitch data)
 rms_diff = np.diff(rms[0])		
 for i in xrange(0,rms.shape[1]-4):
-	if (rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .25) or np.all(rms_diff[i:i+8] > 0):
-		if (rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .25): # meets stricter criterion so more likely onset
+	if (rms[0,i+4] - rms[0,i] >= 1.25 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.35)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .35) or np.all(rms_diff[i:i+8] > 0):
+		if (rms[0,i+4] - rms[0,i] >= 1.25 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.35)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .35): # meets stricter criterion so more likely onset
 			onsets[j] = i
 			j += 1		
 		else: # meets some critera, possible onset (check with pitch); soft onset
@@ -116,21 +116,33 @@ def array_to_MIDI(array):
 
 
 	# write MIDI file
-#	with MidiFile() as outfile:
+with MidiFile() as outfile:
 		# Initialize
-#		track = MidiTrack()
-#		outfile.tracks.append(track)
+	track = MidiTrack()
+	outfile.tracks.append(track)
 
 		# add MIDI events
-#		track.append(Message('program_change', program=12))
-#		track.append(Message('note_on', note=test_data1[0], velocity=test_data1[3], time=int(test_data1[1]*512./44100*1000)))
-#		track.append(Message('note_off', note=test_data1[0], velocity=test_data1[3], time=test_duration[0]))
-#		track.append(Message('note_on', note=test_data2[0], velocity=test_data2[3], time=test_duration[1]))
-#		track.append(Message('note_off', note=test_data2[0], velocity=test_data2[3], time=test_duration[2]))
-#		track.append(Message('note_on', note=test_data3[0], velocity=test_data3[3], time=test_duration[3]))
-#		track.append(Message('note_off', note=test_data3[0], velocity=test_data3[3], time=test_duration[4]))
+	track.append(Message('program_change', program=12))
+	track.append(Message('note_on', note=60, velocity=100, time=0))
+	track.append(Message('note_off', note=60, velocity=100, time=480))
+	track.append(Message('note_on', note=60, velocity=90, time=480))
+	track.append(Message('note_off', note=60, velocity=90, time=480))
+	track.append(Message('note_on', note=60, velocity=80, time=480))
+	track.append(Message('note_off', note=60, velocity=80, time=480))
+	track.append(Message('note_on', note=60, velocity=70, time=480))
+	track.append(Message('note_off', note=60, velocity=70, time=480))
+	track.append(Message('note_on', note=60, velocity=60, time=480))
+	track.append(Message('note_off', note=60, velocity=60, time=480))
+	track.append(Message('note_on', note=60, velocity=50, time=480))
+	track.append(Message('note_off', note=60, velocity=50, time=480))
+	track.append(Message('note_on', note=60, velocity=40, time=480))
+	track.append(Message('note_off', note=60, velocity=40, time=480))
+	track.append(Message('note_on', note=60, velocity=30, time=480))
+	track.append(Message('note_off', note=60, velocity=30, time=480))
+	track.append(Message('note_on', note=60, velocity=20, time=480))
+	track.append(Message('note_off', note=60, velocity=20, time=480))
 
-	#outfile.save('test.mid') # output MIDI file
+outfile.save('test.mid') # output MIDI file
 
 # Plot
 plt.figure()

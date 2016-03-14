@@ -6,9 +6,12 @@ from mido import Message, MidiFile, MidiTrack, MetaMessage
 def array_to_MIDI(array,sig_length):
 
 	# get relative times between events
+	test_times = (np.diff(np.sort(np.concatenate((array[:,1],array[:,2])))* 512./44100)).astype(float)
+
 	test_duration = (np.diff(np.sort(np.concatenate((array[:,1],array[:,2])))* 512./44100*960)).astype(int)
 	print array
 	print test_duration
+	print test_times
 	#* 512./44100*960)
 	# write MIDI file
 	with MidiFile() as outfile:
@@ -32,8 +35,9 @@ def array_to_MIDI(array,sig_length):
 				track.append(Message('note_off', note=array[segment,0], velocity=array[segment,3], time=test_duration[seg_skip_off]))
 				print test_duration[seg_skip_off]
 				seg_skip_on = seg_skip_off + 1
-		#track_end = int(sig_length - 512./44100*960 * array[-1,2])
-		#track.append(MetaMessage('end_of_track',time=track_end))
+		track_end = int((sig_length/44100. - 512./44100 * array[-1,2])*960)
+		track.append(Message('program_change', program=12, time=track_end))
+		track.append(MetaMessage('end_of_track'))
 				
 		#outfile.save('output.mid') # output MIDI file
 		

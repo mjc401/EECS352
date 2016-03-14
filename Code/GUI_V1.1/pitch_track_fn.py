@@ -19,7 +19,7 @@ def pitch_track(filename, samplerate, Display=False):
 
     #########VARY this Value
     tolerance = 0.80
-    silence_threshold = 0.02
+    silence_threshold = 0.00004
     #####################
     # if len(sys.argv) < 2:
     #     print "Usage: %s <filename> [samplerate]" % sys.argv[0]
@@ -303,16 +303,20 @@ def silence_mask(in_array, signal2, silence_threshold):
 
 def onset_detect(rms, Display = True):
     # Initialize
-    onsets = np.zeros(200)
-    onsets_pos = np.zeros(200)
+    onsets = np.zeros(5000)
+    onsets_pos = np.zeros(5000)
     j=0
     k=0
 
     ## Two criterion: one stricter (greater possibility of onset) and one less (possibility but should be checked with pitch data)
     rms_diff = np.diff(rms[0])      
+	
+	#if (rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .25) or np.all(rms_diff[i:i+8] > 0):
+     #       if (rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .25): # meets stricter criterion so more likely onset
+	
     for i in xrange(0,rms.shape[1]-4):
-        if (rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .25) or np.all(rms_diff[i:i+8] > 0):
-            if (rms[0,i+4] - rms[0,i] >= .5 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.25)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .25): # meets stricter criterion so more likely onset
+        if (rms[0,i+4] - rms[0,i] >= 1.25 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.35)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .35) or np.all(rms_diff[i:i+8] > 0):
+            if (rms[0,i+4] - rms[0,i] >= 1.25 and np.all(rms_diff[i:i+4]>0) and np.all(rms_diff[i:i+3]>.35)) or (rms[0,i+2] - rms[0,i] > .71 and rms_diff[i] > .35): # meets stricter criterion so more likely onset
                 onsets[j] = i
                 j += 1      
             else: # meets some critera, possible onset (check with pitch); soft onset

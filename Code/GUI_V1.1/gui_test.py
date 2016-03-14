@@ -269,6 +269,8 @@ class Application(Frame):
 			if self.mb_sel == 2: # External as Input
 				self.rec_on = True
 				print "Recording..."
+				self.rec_red = PhotoImage(file="./GUI_images/record_red.gif")
+				self.record_button["image"] = self.rec_red
 				self.record_audio(2)
 		#if self.rb_sel is 3:
 		#	self.live_on = True
