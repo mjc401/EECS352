@@ -527,7 +527,7 @@ root.geometry("%dx%d+%d+%d" % (size + (x, y)))
 root.lift()
 root.attributes("-topmost", True)
 root.attributes("-topmost", False)
-root.wm_title("InstruSwitch v1.0")
+root.wm_title("InstruSwitch v1.2")
 app.mainloop()
 if app.rb_sel == 2:
 	os.remove("rec_data.wav")
